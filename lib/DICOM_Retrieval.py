@@ -1,6 +1,7 @@
+import errno
 import subprocess
 import logging
-import ast
+import pydicom
 import time
 import pandas as pd
 import numpy as np
@@ -18,22 +19,34 @@ class DicomRetrieval:
         self.rv = None
         self.ls = None
 
-    def listening(self, patient, f):
-        self.patient_outdir = os.path.join(self.out_base_dir, patient)
+    def listening(self, patient, series, f):
+        self.patient_outdir = os.path.join(self.out_base_dir, patient+'/'+series)
         self.ls = subprocess.Popen('storescp -b bofa-420-aberle@10.9.94.219:12112 \
-         --directory %s' % self.patient_outdir, shell=True, stdout=f, preexec_fn=os.setsid)
+         --directory %s' % self.patient_outdir, shell=True, stdout=f, stderr=f, preexec_fn=os.setsid)
 
     def query(self, patient, accession, f):
         patient_uid_dir = os.path.join(self.out_query_dir, patient, 'AccessionNumber-' + accession)
-        subprocess.call('findscu -b bofa-420-aberle@10.9.94.219:12112 \
-                -c WWPACSQR@10.7.1.64:4100 -m AccessionNumber=%s -r StudyInstanceUID NumberOfSeriesRelatedInstances\
-                --out-dir %s' % (accession, patient_uid_dir), stdout=f, shell=True)
+        try:
+            os.makedirs(patient_uid_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
 
-    def retrieve(self, patient, accession, f):
+        if not os.listdir(patient_uid_dir):
+            subprocess.call('findscu -b bofa-420-aberle@10.9.94.219:12112 \
+                    -c WWPACSQR@10.7.1.64:4100 -m AccessionNumber=%s -L SERIES -r SeriesInstanceUID \
+                     NumberOfStudyRelatedInstances NumberOfSeriesRelatedInstances\
+                    --out-file series.dcm --out-dir %s' % (accession, patient_uid_dir), stdout=f, stderr=f, shell=True)
+        else:
+            pass
+        return patient_uid_dir
+
+    def retrieve(self, patient, accession, s, f):
         patient_uid_dir = os.path.join(self.out_query_dir, patient, 'AccessionNumber-' + accession + '/*')
         self.rv = subprocess.call('movescu -b bofa-420-aberle@10.9.94.219:12112 \
-        -c WWPACSQR@10.7.1.64:4100 -i StudyInstanceUID --dest bofa-420-aberle %s' %
-                                  patient_uid_dir, stdout=f, shell=True)
+        -c WWPACSQR@10.7.1.64:4100 -L SERIES -m SeriesInstanceUID=%s \
+        --idle-timeout 10000 --retrieve-timeout-total 600000 --dest bofa-420-aberle \
+        -- %s' % (s.SeriesInstanceUID, patient_uid_dir), stdout=f, stderr=f, shell=True)
 
     @staticmethod
     def kill(proc_pid):
@@ -51,54 +64,63 @@ if __name__ == '__main__':
     if not os.path.isdir(log_outdir):
         os.makedirs(log_outdir)
 
-    dcm_file = pd.read_csv('/home/harryzhang/PACS_QUERY/Johnny_Accessions.csv', dtype=str)
+    dcm_file = pd.read_csv('/home/harryzhang/PACS_QUERY/DICOM_Query_0806.csv', dtype=str)
     dcm_array = np.array(dcm_file)
-    num_iterations = 2
+    num_iterations = 10
 
     i = 1
 
     while i < num_iterations:
 
         logging.info("Iter %d, Starting DICOM dump into directory %s" % (i, out_base_dir,))
-        logging.info("Error logs located at %s" % log_outdir)
+        logging.info("Logs located at %s" % log_outdir)
 
-        for pt_row in dcm_array[0:3]:
+        for pt_row in dcm_array:
             t0 = time.time()
             print(pt_row)
-            if not os.path.isdir(out_base_dir+'/'+pt_row[0]):
-                os.makedirs(out_base_dir+'/'+pt_row[0])
-            path, dir, files = next(os.walk(out_base_dir+'/'+pt_row[0]))
-            if len(files) < int(pt_row[4]):
-                log_out_query = os.path.join(log_outdir, '%s.%d.query.log' % (str(pt_row[0]), i))
-                log_out_listen = os.path.join(log_outdir, '%s.%d.listen.log' % (str(pt_row[0]), i))
-                log_out_retrieve = os.path.join(log_outdir, '%s.%d.retireve.log' % (str(pt_row[0]), i))
-                query_log = open(log_out_query, 'w')
-                listening_log = open(log_out_listen, 'w')
-                retrieve_log = open(log_out_retrieve, 'w')
-                retrieval_instance = DicomRetrieval(out_base_dir, out_query_dir)
-                retrieval_instance.query(patient=pt_row[0], accession=pt_row[2], f=query_log)
-                retrieval_instance.listening(patient=pt_row[0], f=listening_log)
-                print("port listening process PID:")
-                print(retrieval_instance.ls.pid)
-                print("start retrieving")
-                time.sleep(1)
-                retrieval_instance.retrieve(patient=pt_row[0], accession=pt_row[2], f=retrieve_log)
-                t1 = time.time()
-                print('retrieval time used %d ' % (t1 - t0))
-                print('Waiting...30s')
-                time.sleep(30)
-                query_log.close()
-                listening_log.close()
-                retrieve_log.close()
-                '''
-                try:
-                    retrieval_instance.ls.wait(timeout=1)
-                except subprocess.TimeoutExpired:
-                    retrieval_instance.kill(retrieval_instance.ls.pid)
-                '''
-                os.killpg(os.getpgid(retrieval_instance.ls.pid), signal.SIGTERM)
-            else:
-                continue
+
+            log_out_query = os.path.join(log_outdir, '%s.%d.query.log' % (str(pt_row[0]), i))
+            query_log = open(log_out_query, 'w')
+            retrieval_instance = DicomRetrieval(out_base_dir, out_query_dir)
+            patient_query_dir = retrieval_instance.query(patient=pt_row[0], accession=pt_row[2], f=query_log)
+            query_log.close()
+
+            for series_file in os.listdir(patient_query_dir):
+                series = pydicom.dcmread(patient_query_dir+'/'+series_file, force=True)
+                if not os.path.isdir(out_base_dir + '/' + pt_row[0]+'/'+os.fsdecode(series_file)):
+                    os.makedirs(out_base_dir + '/' + pt_row[0]+'/'+os.fsdecode(series_file))
+
+                path, dir, files = next(os.walk(out_base_dir+'/'+pt_row[0]+'/'+os.fsdecode(series_file)))
+                if len(files) < int(series.NumberOfSeriesRelatedInstances):
+
+                    log_out_listen = os.path.join(log_outdir, '%s.%s.%d.listen.log' % (str(pt_row[0]),
+                                                                                       os.fsdecode(series_file), i))
+                    log_out_retrieve = os.path.join(log_outdir, '%s.%s.%d.retireve.log' % (str(pt_row[0]),
+                                                                                           os.fsdecode(series_file), i))
+                    listening_log = open(log_out_listen, 'w')
+                    retrieve_log = open(log_out_retrieve, 'w')
+                    retrieval_instance.listening(patient=pt_row[0], series=os.fsdecode(series_file), f=listening_log)
+                    print("port listening process PID:")
+                    print(retrieval_instance.ls.pid)
+                    print("start retrieving %s" % os.fsdecode(series_file))
+                    time.sleep(5)
+                    retrieval_instance.retrieve(patient=pt_row[0], accession=pt_row[2], s=series, f=retrieve_log)
+                    t1 = time.time()
+                    print('retrieval time used %d s' % (t1 - t0))
+                    print('Waiting...5s')
+                    time.sleep(5)
+
+                    listening_log.close()
+                    retrieve_log.close()
+                    '''
+                    try:
+                        retrieval_instance.ls.wait(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        retrieval_instance.kill(retrieval_instance.ls.pid)
+                    '''
+                    os.killpg(os.getpgid(retrieval_instance.ls.pid), signal.SIGTERM)
+                else:
+                    continue
 
         i += 1
 
