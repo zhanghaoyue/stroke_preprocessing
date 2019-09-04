@@ -24,28 +24,29 @@ class DicomRetrieval:
         self.ls = subprocess.Popen('storescp -b bofa-420-aberle@10.9.94.219:12112 \
          --directory %s' % self.patient_outdir, shell=True, stdout=f, stderr=f, preexec_fn=os.setsid)
 
-    def query(self, patient, accession, f):
+    def query(self, flag, patient, accession, f):
         patient_uid_dir = os.path.join(self.out_query_dir, patient, 'AccessionNumber-' + accession)
-        try:
-            os.makedirs(patient_uid_dir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        if not flag:
+            try:
+                os.makedirs(patient_uid_dir)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
 
-        if not os.listdir(patient_uid_dir):
-            subprocess.call('findscu -b bofa-420-aberle@10.9.94.219:12112 \
-                    -c WWPACSQR@10.7.1.64:4100 -m AccessionNumber=%s -L SERIES -r SeriesInstanceUID \
-                     NumberOfStudyRelatedInstances NumberOfSeriesRelatedInstances\
-                    --out-file series.dcm --out-dir %s' % (accession, patient_uid_dir), stdout=f, stderr=f, shell=True)
-        else:
-            pass
+            if not os.listdir(patient_uid_dir):
+                subprocess.call('findscu -b bofa-420-aberle@10.9.94.219:12112 --big-endian\
+                        -c WWPACSQR@10.7.1.64:4100 -m AccessionNumber=%s Modality=MR -L SERIES -r SeriesInstanceUID \
+                         NumberOfStudyRelatedInstances NumberOfSeriesRelatedInstances --out-file series.dcm \
+                         --out-dir %s' % (accession, patient_uid_dir), stdout=f, stderr=f, shell=True)
+            else:
+                pass
         return patient_uid_dir
 
     def retrieve(self, patient, accession, s, f):
         patient_uid_dir = os.path.join(self.out_query_dir, patient, 'AccessionNumber-' + accession + '/*')
         self.rv = subprocess.call('movescu -b bofa-420-aberle@10.9.94.219:12112 \
-        -c WWPACSQR@10.7.1.64:4100 -L SERIES -m SeriesInstanceUID=%s \
-        --idle-timeout 10000 --retrieve-timeout-total 600000 --dest bofa-420-aberle \
+        -c WWPACSQR@10.7.1.64:4100 -L SERIES -m SeriesInstanceUID=%s Modality=MR\
+        --idle-timeout 10000 --retrieve-timeout-total 600000 --dest bofa-420-aberle\
         -- %s' % (s.SeriesInstanceUID, patient_uid_dir), stdout=f, stderr=f, shell=True)
 
     @staticmethod
@@ -60,16 +61,16 @@ if __name__ == '__main__':
     out_base_dir = '/media/harryzhang/VolumeWD/DataDump_MRN'
     out_query_dir = '/media/harryzhang/VolumeWD/QueryUID'
     logging.getLogger().setLevel(logging.INFO)
-    log_outdir = os.path.join(out_base_dir, 'logs')
+    log_outdir = os.path.join('/media/harryzhang/VolumeWD/', 'logs')
     if not os.path.isdir(log_outdir):
         os.makedirs(log_outdir)
 
     dcm_file = pd.read_csv('/home/harryzhang/PACS_QUERY/DICOM_Query_0806.csv', dtype=str)
     dcm_array = np.array(dcm_file)
     num_iterations = 10
+    retrieve_only = True
 
     i = 1
-
     while i < num_iterations:
 
         logging.info("Iter %d, Starting DICOM dump into directory %s" % (i, out_base_dir,))
@@ -80,9 +81,9 @@ if __name__ == '__main__':
             print(pt_row)
 
             log_out_query = os.path.join(log_outdir, '%s.%d.query.log' % (str(pt_row[0]), i))
-            query_log = open(log_out_query, 'w')
             retrieval_instance = DicomRetrieval(out_base_dir, out_query_dir)
-            patient_query_dir = retrieval_instance.query(patient=pt_row[0], accession=pt_row[2], f=query_log)
+            query_log = open(log_out_query, 'w')
+            patient_query_dir = retrieval_instance.query(flag=retrieve_only, patient=pt_row[0], accession=pt_row[2], f=query_log)
             query_log.close()
 
             for series_file in os.listdir(patient_query_dir):
@@ -95,7 +96,7 @@ if __name__ == '__main__':
 
                     log_out_listen = os.path.join(log_outdir, '%s.%s.%d.listen.log' % (str(pt_row[0]),
                                                                                        os.fsdecode(series_file), i))
-                    log_out_retrieve = os.path.join(log_outdir, '%s.%s.%d.retireve.log' % (str(pt_row[0]),
+                    log_out_retrieve = os.path.join(log_outdir, '%s.%s.%d.retrieve.log' % (str(pt_row[0]),
                                                                                            os.fsdecode(series_file), i))
                     listening_log = open(log_out_listen, 'w')
                     retrieve_log = open(log_out_retrieve, 'w')
@@ -125,3 +126,4 @@ if __name__ == '__main__':
         i += 1
 
     logging.info("Dump complete")
+
