@@ -127,7 +127,7 @@ do not work with this compression
 '''
 
 
-def dcm_to_dcm_compress(dicom_dir, dicom_out_dir, level='study'):
+def dcm_to_dcm_compress(dicom_dir, dicom_out_dir, level='series'):
     for patient in os.listdir(dicom_dir):
         path_dicom = os.path.join(dicom_dir, patient)
         path_out = os.path.join(dicom_out_dir, patient)
@@ -149,11 +149,11 @@ def dcm_to_dcm_compress(dicom_dir, dicom_out_dir, level='study'):
 
 
 if __name__ == '__main__':
-    dicom_split_dir = "/media/harryzhang/VolumeWD/DataDump_MRN"
+    dicom_split_dir = "/media/harryzhang/VolumeWD/DataDump_MRN_series"
     nifti_dir = "/media/harryzhang/VolumeWD/NIFTI_Images"
     transcode_dicom_dir = "/media/harryzhang/VolumeWD/Dicom_transcoded"
-    dcm_to_dcm_compress(dicom_split_dir, transcode_dicom_dir, 'series')
-    dcm_to_nifti(transcode_dicom_dir, nifti_dir, True, 'dcm2niix')
+    #dcm_to_dcm_compress(dicom_split_dir, transcode_dicom_dir, 'series')
+    #dcm_to_nifti(transcode_dicom_dir, nifti_dir, True, 'dcm2niix')
 
 
 

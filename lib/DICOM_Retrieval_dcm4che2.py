@@ -10,9 +10,16 @@ import pydicom
 
 
 def retrieve(out_dir, accession, series_uid, f):
-    subprocess.call('~/toolbox/dcm4che-2.0.29-bin/dcm4che-2.0.29/bin/dcmqr -L bofa-420-aberle@10.9.94.219:12112 \
-                WWPACSQR@10.7.1.64:4100 -cmove bofa-420-aberle -S -qAccessionNumber=%s -qSeriesInstanceUID=%s \
-                -qModalitiesInStudy=MR -cstore MR -cstoredest %s'
+    """
+    credentials:
+    local:
+        bofa-420-aberle@10.9.94.219:12112
+    remote:
+        WWPACSQR@10.7.1.64:4100
+    """
+    subprocess.call('~/toolbox/dcm4che-2.0.29-bin/dcm4che-2.0.29/bin/dcmqr -L RADPATH@10.1.122.55:4100 \
+                WWPACSQR@10.7.1.64:4100 -cmove RADPATH -S -qAccessionNumber=%s -qSeriesInstanceUID=%s \
+                -qModalitiesInStudy=MR -cstore MR -cstore SC -cstore PR -cstoredest %s'
                     % (accession, series_uid, out_dir), stdout=f, stderr=f, shell=True)
 
 
