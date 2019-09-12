@@ -21,7 +21,7 @@ class DicomRetrieval:
 
     def listening(self, patient, series, f):
         self.patient_outdir = os.path.join(self.out_base_dir, patient+'/'+series)
-        self.ls = subprocess.Popen('storescp -b bofa-420-aberle@10.9.94.219:12112 \
+        self.ls = subprocess.Popen('storescp --accept-unknown -b bofa-420-aberle@10.9.94.219:12112 \
          --directory %s' % self.patient_outdir, shell=True, stdout=f, stderr=f, preexec_fn=os.setsid)
 
     def query(self, flag, patient, accession, f):
@@ -58,7 +58,7 @@ class DicomRetrieval:
 
 
 if __name__ == '__main__':
-    out_base_dir = '/media/harryzhang/VolumeWD/DataDump_MRN'
+    out_base_dir = '/media/harryzhang/VolumeWD/DataDump_MRN_series_v5'
     out_query_dir = '/media/harryzhang/VolumeWD/QueryUID'
     logging.getLogger().setLevel(logging.INFO)
     log_outdir = os.path.join('/media/harryzhang/VolumeWD/', 'logs')

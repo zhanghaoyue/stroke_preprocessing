@@ -15,6 +15,10 @@ for patient in os.listdir(out_base_dir):
     patient_dir = os.path.join(out_base_dir, patient)
     for series_folder in os.listdir(patient_dir):
         series_dir = os.path.join(patient_dir, series_folder)
+        for series_file in os.listdir(series_dir):
+            if series_file.endswith('.log'):
+                series_file_path = os.path.join(series_dir, series_file)
+                os.remove(series_file_path)
         if not os.listdir(series_dir):
             accession = dcm_array[np.where(dcm_array == patient)[0][0]][2]
             if accession == '44086115':

@@ -2,22 +2,29 @@
   <dictionary name="harryzhang">
     <words>
       <w>aberle</w>
+      <w>anat</w>
+      <w>applywarp</w>
       <w>bmask</w>
       <w>bofa</w>
       <w>cmove</w>
+      <w>coreg</w>
       <w>coregistration</w>
+      <w>coregwf</w>
       <w>cstore</w>
       <w>cstoredest</w>
       <w>dicom</w>
       <w>freesurfer</w>
+      <w>fwhm</w>
       <w>harryzhang</w>
       <w>jpll</w>
+      <w>mutualinfo</w>
       <w>nifti</w>
       <w>niix</w>
       <w>outdir</w>
       <w>preprocessing</w>
       <w>resample</w>
       <w>subfolder</w>
+      <w>tpms</w>
       <w>transcoded</w>
     </words>
   </dictionary>
