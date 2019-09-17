@@ -131,6 +131,7 @@ datasink = Node(DataSink(base_directory=experiment_dir,
                          container=output_dir),
                 name="datasink")
 
+
 ## Use the following DataSink output substitutions
 substitutions = [('_subject_id_', 'sub-'),
                  ('_task_name_', '/task-'),
@@ -163,7 +164,7 @@ preproc.connect([(infosource, selectfiles, [('subject_id', 'subject_id'),
                  (selectfiles, coregwf, [('anat', 'bet_anat.in_file'),
                                          ('anat', 'coreg_mi.reference')]),
                  (N4_BFC, coregwf, [('anat', 'bet_anat.in_file'),
-                                         ('anat', 'coreg_mi.reference')]),
+                                    ('anat', 'coreg_mi.reference')]),
 
                  (coregwf, smooth, [('applywarp.out_file', 'in_files')]),
 

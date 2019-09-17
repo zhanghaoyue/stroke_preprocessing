@@ -9,10 +9,11 @@ import csv
 def rename_and_copy(new_ids, input_dir, output_dir):
 
     new_dict = {}
-    feature_list = ['patient', 'DWI', 'FLAIR', 'ADC', 'TTP', 'PWI', 'ADC_BS', 'ADC_Cor', 'DWI_BS', 'DWI_Cor', 'DWI_Cor',
-                    'FLAIR', 'GBP', 'GRE', 'PBP', 'RAPID_All', 'RAPID_CBF', 'RAPID_CBF_C','RAPID_CBV', 'RAPID_CBV_C',
-                    'RAPID_DWI','RAPID_MTT', 'RAPID_MTT_C','RAPID_PW', 'RAPID_PWI', 'RAPID_TMAX', 'RAPID_TMAX_C', 'T1',
-                    'T1_Cor', 'T1_Post', 'T1_Pre', 'T2', 'TTP']
+    feature_list = ['patient', 'DWI', 'FLAIR', 'ADC', 'TTP', 'PWI', 'ADC_BS', 'ADC_Cor', 'DWI_BS', 'DWI_Cor',
+                    'FLAIR', 'GBP', 'GRE', 'PBP', 'RAPID_All', 'RAPID_CBF', 'RAPID_CBF_C', 'RAPID_CBV', 'RAPID_CBV_C',
+                    'RAPID_DWI', 'RAPID_MTT', 'RAPID_MTT_C', 'RAPID_PWI', 'RAPID_Summary', 'RAPID_TMAX', 'RAPID_TMAX_C',
+                    'T1_Blade', 'T1_Cor', 'T1_Post', 'T1_Pre', 'T1_Post_Cor', 'T1_Pre_AuditoryCanal', 'T1_Pre_Cor',
+                    'T2', 'T2_Cor', 'T2_Cor_AuditoryCanal', 'T2_Sag', 'T2_Sag_AuditoryCanal', 'TTP']
     patient_series_info = pd.DataFrame(columns=feature_list)
 
     new_ids = np.array(new_ids)
@@ -26,7 +27,7 @@ def rename_and_copy(new_ids, input_dir, output_dir):
         nii_output = os.path.join(output_dir, patient)
         if not os.path.isdir(nii_output):
             os.makedirs(nii_output)
-        a = np.zeros(shape=(1,33))
+        a = np.zeros(shape=(1, 39))
         patient_row = pd.DataFrame(a, columns=feature_list)
         patient_row.iloc[0, patient_row.columns.get_loc('patient')] = patient
         for nifti_file in os.listdir(pt_dir):
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     nifti_input_dir = '/media/harryzhang/VolumeWD/NIFTI_Images'
     nifti_output_dir = '/media/harryzhang/VolumeWD/NIFTI_Renamed'
 
-    #rename_and_copy(ids, nifti_input_dir, nifti_output_dir)
+    rename_and_copy(ids, nifti_input_dir, nifti_output_dir)
     unique_cases = check_unique_cases(nifti_input_dir)
     with open('/home/harryzhang/Desktop/unique_cases.csv','w') as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
