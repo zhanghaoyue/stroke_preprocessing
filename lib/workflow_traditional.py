@@ -1,9 +1,12 @@
+import os
+import shutil
+import tempfile
+from joblib import Parallel, delayed
+import multiprocessing
 import nibabel as nib
+from intensity_normalization.normalize import zscore
 from nipype.interfaces import fsl
 from nipype.interfaces.ants import N4BiasFieldCorrection
-from intensity_normalization.normalize import zscore
-import os, shutil
-import tempfile
 
 
 def preprocess(data_dir, subject, atlas_dir, output_dir):
@@ -16,10 +19,18 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
         reorient.inputs.out_file = os.path.join(temp_dir, 'DWI_b0_reorient.nii.gz')
         res = reorient.run()
 
+        # robust fov to remove neck and lower head automatically
+
+        rf = fsl.utils.RobustFOV()
+        rf.inputs.in_file = os.path.join(temp_dir, 'DWI_b0_reorient.nii.gz')
+        rf.inputs.out_roi = os.path.join(temp_dir, 'DWI_b0_RF.nii.gz')
+        res = rf.run()
+
         # skull stripping first run
         btr1 = fsl.BET()
-        btr1.inputs.in_file = os.path.join(temp_dir, 'DWI_b0_reorient.nii.gz')
+        btr1.inputs.in_file = os.path.join(temp_dir, 'DWI_b0_RF.nii.gz')
         btr1.inputs.robust = True
+        btr1.inputs.frac = 0.5
         btr1.inputs.out_file = os.path.join(temp_dir, 'BET_b0_first_run.nii.gz')
         res = btr1.run()
         print('BET pre-stripping...')
@@ -39,7 +50,7 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
         flt = fsl.FLIRT(bins=640, cost_func='mutualinfo', interp='spline',
                         searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=12)
         flt.inputs.in_file = os.path.join(temp_dir, 'BET_b0_first_run_n4.nii.gz')
-        flt.inputs.reference = atlas_folder+'/mni152_2009_256.nii.gz'
+        flt.inputs.reference = atlas_dir+'/mni152_2009_256.nii.gz'
         flt.inputs.out_file = os.path.join(temp_dir, 'BET_b0_first_run_r.nii.gz')
         flt.inputs.out_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
         res = flt.run()
@@ -49,7 +60,7 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
         btr2 = fsl.BET()
         btr2.inputs.in_file = os.path.join(temp_dir, 'BET_b0_first_run_r.nii.gz')
         btr2.inputs.robust = True
-        btr2.inputs.frac = 0.5
+        btr2.inputs.frac = 0.35
         btr2.inputs.mask = True
         btr2.inputs.out_file = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
         res = btr2.run()
@@ -71,7 +82,7 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
         print('patient %s registration done' % subject)
 
 
-def coregister(data_dir, subject, modality, output_dir):
+def coregister(data_dir, subject, modality, atlas_dir, output_dir):
 
     with tempfile.TemporaryDirectory() as temp_dir:
 
@@ -121,7 +132,7 @@ def coregister(data_dir, subject, modality, output_dir):
                 flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180])
                 flt.inputs.in_file = os.path.join(temp_dir, 'FLAIR_reorient.nii.gz')
-                flt.inputs.reference = atlas_folder + '/mni152_2009_256.nii.gz'
+                flt.inputs.reference = atlas_dir + '/mni152_2009_256.nii.gz'
                 flt.inputs.out_file = os.path.join(temp_dir, 'FLAIR_r.nii.gz')
                 flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
@@ -155,7 +166,7 @@ def coregister(data_dir, subject, modality, output_dir):
                 flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                 flt.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
-                flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
+                flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                 flt.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
                 flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
@@ -189,7 +200,7 @@ def coregister(data_dir, subject, modality, output_dir):
                 flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                 flt.inputs.in_file = os.path.join(temp_dir, 'TMAX_reorient.nii.gz')
-                flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                 flt.inputs.out_file = os.path.join(temp_dir, 'TMAX_r.nii.gz')
                 flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
@@ -223,7 +234,7 @@ def coregister(data_dir, subject, modality, output_dir):
                 flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                 flt.inputs.in_file = os.path.join(temp_dir, 'TTP_reorient.nii.gz')
-                flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                 flt.inputs.out_file = os.path.join(temp_dir, 'TTP_r.nii.gz')
                 flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
@@ -253,11 +264,11 @@ def coregister(data_dir, subject, modality, output_dir):
                 reorient.inputs.out_file = os.path.join(temp_dir, 'CBF_reorient.nii.gz')
                 res = reorient.run()
 
-                # register with TTP
-                flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
+                # register with CBF
+                flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                 flt.inputs.in_file = os.path.join(temp_dir, 'CBF_reorient.nii.gz')
-                flt.inputs.reference = os.path.join(output_dir, subject, 'TMAX.nii.gz')
+                flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                 flt.inputs.out_file = os.path.join(temp_dir, 'CBF_r.nii.gz')
                 flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
@@ -287,11 +298,11 @@ def coregister(data_dir, subject, modality, output_dir):
                 reorient.inputs.out_file = os.path.join(temp_dir, 'CBV_reorient.nii.gz')
                 res = reorient.run()
 
-                # register with TTP
-                flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
+                # register with CBV
+                flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                 flt.inputs.in_file = os.path.join(temp_dir, 'CBV_reorient.nii.gz')
-                flt.inputs.reference = os.path.join(output_dir, subject, 'TMAX.nii.gz')
+                flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                 flt.inputs.out_file = os.path.join(temp_dir, 'CBV_r.nii.gz')
                 flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
@@ -321,11 +332,11 @@ def coregister(data_dir, subject, modality, output_dir):
                 reorient.inputs.out_file = os.path.join(temp_dir, 'MTT_reorient.nii.gz')
                 res = reorient.run()
 
-                # register with TTP
+                # register with MTT
                 flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                 flt.inputs.in_file = os.path.join(temp_dir, 'MTT_reorient.nii.gz')
-                flt.inputs.reference = os.path.join(output_dir, subject, 'TMAX.nii.gz')
+                flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                 flt.inputs.out_file = os.path.join(temp_dir, 'MTT_r.nii.gz')
                 flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
@@ -353,21 +364,35 @@ def coregister(data_dir, subject, modality, output_dir):
 
 if __name__ == '__main__':
     atlas_folder = "/mnt/sharedJH/atlas"
-    data_test_folder = '/mnt/sharedJH/NII_Renamed_test'
-    output_folder = '/media/harryzhang/VolumeWD/output/output_test'                                                                                                                                                                 
-
-    subject_list = ['540335', '540410', '540449', '570143', '570252', '570255', '570364']
+    data_test_folder = '/mnt/sharedJH/NIFTI_Renamed'
+    output_folder = '/mnt/sharedJH/Registered_output'
 
     modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
 
-    for patient in os.listdir(data_test_folder):
+    par = True
 
-        if not os.path.isdir(os.path.join(output_folder, patient)):
-            os.makedirs(os.path.join(output_folder, patient))
+    def complete_reg_steps(p):
+        if not os.path.isdir(os.path.join(output_folder, p)):
+            os.makedirs(os.path.join(output_folder, p))
 
-        # preprocess(data_test_folder, patient, atlas_folder, output_folder)
+        preprocess(data_test_folder, p, atlas_folder, output_folder)
 
-        for m in modality_list:
-            coregister(data_test_folder, patient, m, output_folder)
+        for mo in modality_list:
+            coregister(data_test_folder, p, mo, atlas_folder, output_folder)
+
+    if not par:
+        for patient in os.listdir(data_test_folder):
+
+            if not os.path.isdir(os.path.join(output_folder, patient)):
+                os.makedirs(os.path.join(output_folder, patient))
+
+            preprocess(data_test_folder, patient, atlas_folder, output_folder)
+
+            for m in modality_list:
+                coregister(data_test_folder, patient, m, output_folder)
+    else:
+        num_cores = multiprocessing.cpu_count()
+
+        results = Parallel(n_jobs=num_cores)(delayed(complete_reg_steps)(i) for i in os.listdir(data_test_folder))
 
 
