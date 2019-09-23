@@ -34,7 +34,7 @@ fwhm = [2, 3, 4]
 # main workflow
 
 # Reorient
-reorient = Node(fsl.Reorient2Std(output_type='NIFTI_GZ',ignore_exception=True), name='reorient')
+reorient = Node(fsl.Reorient2Std(output_type='NIFTI_GZ', ignore_exception=True), name='reorient')
 
 # Bias Field Correction
 N4_BFC = Node(ants.N4BiasFieldCorrection(dimension=3), name='N4_BFC')
