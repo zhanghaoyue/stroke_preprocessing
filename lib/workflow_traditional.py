@@ -10,7 +10,6 @@ from nipype.interfaces.ants import N4BiasFieldCorrection
 
 
 def preprocess(data_dir, subject, atlas_dir, output_dir):
-
     with tempfile.TemporaryDirectory() as temp_dir:
         if not os.path.exists(os.path.join(output_dir, subject, 'DWI_b0.nii.gz')):
             if os.path.exists(os.path.join(data_dir, subject, 'DWI_b0.nii.gz')):
@@ -51,7 +50,7 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 flt = fsl.FLIRT(bins=640, cost_func='mutualinfo', interp='spline',
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=12)
                 flt.inputs.in_file = os.path.join(temp_dir, 'BET_b0_first_run_n4.nii.gz')
-                flt.inputs.reference = atlas_dir+'/mni152_2009_256.nii.gz'
+                flt.inputs.reference = atlas_dir + '/mni152_2009_256.nii.gz'
                 flt.inputs.out_file = os.path.join(temp_dir, 'BET_b0_first_run_r.nii.gz')
                 flt.inputs.out_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
@@ -88,7 +87,6 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
 
 
 def coregister(data_dir, subject, modality, atlas_dir, output_dir):
-
     with tempfile.TemporaryDirectory() as temp_dir:
 
         # register with different modality
@@ -131,7 +129,9 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                 pass
         elif modality == 'FLAIR':
             if not os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
-                if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')) and os.path.exists(os.path.join(
+                        output_dir, subject, 'B0_r_transform.mat')):
+
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'FLAIR.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'FLAIR_reorient.nii.gz')
@@ -168,7 +168,8 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                 pass
         elif modality == 'ADC':
             if not os.path.exists(os.path.join(output_dir, subject, 'ADC.nii.gz')):
-                if os.path.exists(os.path.join(data_dir, subject, 'ADC.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, subject, 'ADC.nii.gz')) and os.path.exists(os.path.join(
+                        output_dir, subject, 'B0_r_transform.mat')):
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'ADC.nii.gz')
 
@@ -209,7 +210,8 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                 pass
         elif modality == 'TMAX':
             if not os.path.exists(os.path.join(output_dir, subject, 'TMAX.nii.gz')):
-                if os.path.exists(os.path.join(data_dir, subject, 'TMAX.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, subject, 'TMAX.nii.gz')) and os.path.exists(os.path.join(
+                        output_dir, subject, 'B0_r_transform.mat')):
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'TMAX.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'TMAX_reorient.nii.gz')
@@ -249,7 +251,8 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                 pass
         elif modality == 'TTP':
             if not os.path.exists(os.path.join(output_dir, subject, 'TTP.nii.gz')):
-                if os.path.exists(os.path.join(data_dir, subject, 'TTP.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, subject, 'TTP.nii.gz')) and os.path.exists(os.path.join(
+                        output_dir, subject, 'B0_r_transform.mat')):
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'TTP.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'TTP_reorient.nii.gz')
@@ -289,7 +292,8 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                 pass
         elif modality == 'CBF':
             if not os.path.exists(os.path.join(output_dir, subject, 'CBF.nii.gz')):
-                if os.path.exists(os.path.join(data_dir, subject, 'CBF.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, subject, 'CBF.nii.gz')) and os.path.exists(os.path.join(
+                        output_dir, subject, 'B0_r_transform.mat')):
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'CBF.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'CBF_reorient.nii.gz')
@@ -329,7 +333,8 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                 pass
         elif modality == 'CBV':
             if not os.path.exists(os.path.join(output_dir, subject, 'CBV.nii.gz')):
-                if os.path.exists(os.path.join(data_dir, subject, 'CBV.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, subject, 'CBV.nii.gz')) and os.path.exists(os.path.join(
+                        output_dir, subject, 'B0_r_transform.mat')):
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'CBV.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'CBV_reorient.nii.gz')
@@ -369,7 +374,8 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                 pass
         elif modality == 'MTT':
             if not os.path.exists(os.path.join(output_dir, subject, 'MTT.nii.gz')):
-                if os.path.exists(os.path.join(data_dir, subject, 'MTT.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, subject, 'MTT.nii.gz')) and os.path.exists(os.path.join(
+                        output_dir, subject, 'B0_r_transform.mat')):
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'MTT.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'MTT_reorient.nii.gz')
@@ -419,7 +425,8 @@ if __name__ == '__main__':
 
     modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
 
-    par = True
+    parallel = False
+
 
     def complete_reg_steps(p):
         if not os.path.isdir(os.path.join(output_folder, p)):
@@ -430,7 +437,8 @@ if __name__ == '__main__':
         for mo in modality_list:
             coregister(data_folder, p, mo, atlas_folder, output_folder)
 
-    if not par:
+
+    if not parallel:
         for patient in os.listdir(data_folder):
 
             if not os.path.isdir(os.path.join(output_folder, patient)):
@@ -442,5 +450,3 @@ if __name__ == '__main__':
                 coregister(data_folder, patient, m, atlas_folder, output_folder)
     else:
         results = Parallel(n_jobs=8)(delayed(complete_reg_steps)(i) for i in os.listdir(data_folder))
-
-
