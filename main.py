@@ -1,144 +1,81 @@
+import lib.workflow_traditional as wt
+from lib.dicom2nifti import dcm_to_dcm_compress, dcm_to_nifti
+import lib.copy_files as copy_files
+import lib.rapid_conversion as rc
+import csv
+import pandas as pd
 import os
-from os.path import dirname, join
-from shutil import copyfile
-import numpy as np
-import pydicom
-import SimpleITK as sitk
-import nibabel as nib
-from nipype.interfaces import fsl
-from nipype.interfaces.dcm2nii import Dcm2niix,Dcm2nii
-
-dicom_dir = '/home/harryzhang/Desktop/DICOM_Images/'
-dicom_split_dir = '/home/harryzhang/Desktop/DICOM_split/'
-nifti_dir = '/home/harryzhang/Desktop/NIFTI_Images/'
-
-"""
-Step 0
-Read Dicom header and re-orgnize data
-
-"""
+from joblib import Parallel, delayed
 
 
-def file_loader(patients_dir):
-    """Explore patient dicom folders and store dcm filenames
-    in a dictionary of patient.
-
-    Args:
-        patients_dir (str): directory that contains patients folder
-
-    Returns:
-        dictDCM (dict): patient as key, list of dicom files for each patients
-
-    example:
-    dicom_dir = '/home/harryzhang/Desktop/DICOM_Images/'
-    test_dict = file_loader(dicom_dir)
+if __name__ == '__main__':
+    """main function to run the whole process
+    3 major steps:
+    step 1: dicom pulling
+    step 2: convert to nifti and reformat
+    step 3: registration
+    
+    note:
+        for dicom pulling, go to DICOM_Retrieval_dcm4che2 or DICOM_Retrieval_dcm4che5
+        this step is now handle by Shawn
+        check if there is missing cases for dicom pulling
+        go to lib.MissingCases
+        if encoding error, run dcm_to_dcm_compress first:
+        dcm_to_dcm_compress(dicom_split_dir, transcode_dicom_dir, 'series')
     """
 
-    # create an empty dictionary
-    # for each patient, it contains list of all dicom files
-    dict_dcm = {}
+    # paths
+    # maps sequence names dictionary
+    ids = pd.read_csv('/home/harryzhang/PACS_QUERY/image_dict.csv', header=None)
+    # original 461 patients, data in series level (each patient folder contains series folder)
+    dicom_split_dir = "/mnt/sharedJH/DataDump_MRN_series"
+    # new cases added in this folder, data in study level (each patient folder contains all series)
+    dicom_new_dir = "/mnt/sharedJH/DataDump_NewCases_study"
+    # if decompress first, use this dicom folder
+    transcode_dicom_dir = "/mnt/sharedJH/Dicom_transcoded"
+    nifti_input_dir = "/mnt/sharedJH/NIFTI_Images"
+    nifti_output_dir = '/media/harryzhang/VolumeWD/NIFTI_Renamed'
+    nifti_output_dir_new = '/mnt/sharedJH/NIFTI_Renamed_NewCases'
+    atlas_folder = "/mnt/sharedJH/atlas"
+    output_folder = '/mnt/sharedJH/Registered_output'
+    output_folder_new = '/mnt/sharedJH/Registered_output_NewCases'
+    '''
+    # if true, series level, if false, study level
+    dcm_to_nifti(dicom_new_dir, nifti_input_dir, False, 'dcm2niix')
 
-    for patient in os.listdir(patients_dir):
-        path_dicom = os.path.join(patients_dir, patient)
-        lst_files_dcm = []  # create an empty list
-        for dirName, subdirList, fileList in os.walk(path_dicom):
-            for filename in fileList:
-                lst_files_dcm.append(os.path.join(dirName, filename))
-        dict_dcm[patient] = lst_files_dcm
+    copy_files.rename_and_copy(ids, nifti_input_dir, nifti_output_dir_new)
+    unique_cases = copy_files.check_unique_cases(nifti_input_dir)
 
-    return dict_dcm
+    with open('/home/harryzhang/Desktop/unique_cases.csv', 'w') as myfile:
+        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        wr.writerow(unique_cases)
+    '''
+    rc.rapid_map_conversion(nifti_output_dir_new)
 
+    modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
 
-def study_to_sequence(patients_dir, output_dir):
-    """Create subfolder of patient by sequence, then copy to the new subfolder
+    # if test or check for error cases, don't use parallel
+    parallel = False
 
-    Args:
-        patients_dir (str): directory that contains patients folder
-        output_dir (str): output big folder
-    Returns:
-        NA
+    def complete_reg_steps(p):
+        if not os.path.isdir(os.path.join(output_folder_new, p)):
+            os.makedirs(os.path.join(output_folder_new, p))
 
-    example:
-    dicom_dir = '/home/harryzhang/Desktop/DICOM_Images/'
-    dicom_split_dir = '/home/harryzhang/Desktop/DICOM_split/'
-    study_to_sequence(dicom_dir, dicom_split_dir)
-    """
+        wt.preprocess(nifti_output_dir_new, p, atlas_folder, output_folder_new)
 
-    for patient in os.listdir(patients_dir):
-        # make the directory in clean directory if it doesnt work.
-        pt_dir = os.path.join(patients_dir, patient)
-        out_dir = os.path.join(output_dir, patient)
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-        for f in os.listdir(pt_dir):
-
-            ds = pydicom.dcmread(pt_dir + '/' + f)
-            series_name = ds['SeriesDescription'].value
-            series_dir = os.path.join(out_dir, series_name)
-
-            if not os.path.exists(series_dir):
-                os.makedirs(series_dir)
-            os.rename(pt_dir + '/' + f, os.path.join(series_dir, f))
+        for mo in modality_list:
+            wt.coregister(nifti_output_dir_new, p, mo, atlas_folder, output_folder_new)
 
 
-"""
-Step 1
-Dicom to Nifti format conversion
+    if not parallel:
+        for patient in os.listdir(nifti_output_dir_new):
 
-Tool used: Dcm2niix (https://github.com/rordenlab/dcm2niix)
-install dcm2niix first, then use nipype wrapper instead of cmd
+            if not os.path.isdir(os.path.join(output_folder_new, patient)):
+                os.makedirs(os.path.join(output_folder_new, patient))
 
-sample code here shows only T2, DWI and Perfusion conversion
-adjust source_dir for other modalities
-@param:
-compression: Gz compression level, 1=fastest, 9=smallest
-generated cmd line:
-'dcm2niix -b y -z y -5 -x n -t n -m n -o -s n -v n source_dir' 
-"""
+            wt.preprocess(nifti_output_dir_new, patient, atlas_folder, output_folder_new)
 
-
-def dcm_to_nifti(dicom_dir, nifti_dir, split=True, tool_used='dcm2niix'):
-
-    for patient in os.listdir(dicom_dir):
-
-        path_dicom = os.path.join(dicom_dir, patient)
-        path_nifti = os.path.join(nifti_dir, patient)
-        # make subfolder for each patient
-        if not os.path.exists(path_nifti):
-            os.makedirs(path_nifti)
-        if not split:
-            if tool_used == 'dcm2niix':
-                converter = Dcm2niix()
-                converter.inputs.source_dir = path_dicom
-                converter.inputs.compression = 5
-                converter.inputs.merge_imgs = True
-                converter.inputs.out_filename = '%d'
-                converter.inputs.output_dir = path_nifti
-                converter.run()
-            elif tool_used == 'dcm2nii':
-                converter = Dcm2nii()
-                converter.inputs.source_dir = path_dicom
-                converter.inputs.gzip_output = True
-                converter.inputs.output_dir = path_nifti
-                converter.run()
-            else:
-                raise Warning("tool used does not exist, please enter dcm2nii or dcm2niix")
-
-        else:
-            for s in os.listdir(path_dicom):
-                if tool_used == 'dcm2niix':
-                    converter = Dcm2niix()
-                    converter.inputs.source_dir = path_dicom + '/' + s
-                    converter.inputs.compression = 5
-                    converter.inputs.merge_imgs = True
-                    converter.inputs.out_filename = 'x_%d'
-                    converter.inputs.output_dir = path_nifti
-                    converter.run()
-                elif tool_used == 'dcm2nii':
-                    converter = Dcm2nii()
-                    converter.inputs.source_dir = path_dicom + '/' + s
-                    converter.inputs.gzip_output = True
-                    converter.inputs.output_dir = path_nifti
-                    converter.run()
-                else:
-                    raise Warning("tool used does not exist, please enter dcm2nii or dcm2niix")
+            for m in modality_list:
+                wt.coregister(nifti_output_dir_new, patient, m, atlas_folder, output_folder_new)
+    else:
+        results = Parallel(n_jobs=8)(delayed(complete_reg_steps)(i) for i in os.listdir(nifti_output_dir_new))

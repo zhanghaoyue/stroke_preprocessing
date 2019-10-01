@@ -11,6 +11,7 @@ from skimage.color import rgb2gray
 import os
 
 
+# modify RAPID map
 def rapid_map_conversion(input_path):
     rap_ims = {'RAPID_TMAX.nii.gz': 255,
                'RAPID_CBV.nii.gz': 255,
@@ -19,6 +20,23 @@ def rapid_map_conversion(input_path):
 
     for pt in os.listdir(input_path):
         pt_path = os.path.join(input_path, pt)
+        img = 'DWI.nii.gz'
+
+        img_path = os.path.join(pt_path, img)
+        if os.path.exists(img_path):
+            dwi_img = nib.load(img_path)
+            nib.save(dwi_img.slicer[:, :, :, 0], os.path.join(pt_path, 'DWI_b0.nii.gz'))
+            nib.save(dwi_img.slicer[:, :, :, 2], os.path.join(pt_path, 'DWI_b1000.nii.gz'))
+
+        img = 'RAPID_All.nii.gz'
+        img_path = os.path.join(pt_path, img)
+        if os.path.exists(img_path):
+            rapid_img = nib.load(os.path.join(pt_path, img))
+            nib.save(rapid_img.slicer[:, :, :, 0], os.path.join(pt_path, 'RAPID_CBV.nii.gz'))
+            nib.save(rapid_img.slicer[:, :, :, 1], os.path.join(pt_path, 'RAPID_CBF.nii.gz'))
+            nib.save(rapid_img.slicer[:, :, :, 2], os.path.join(pt_path, 'RAPID_MTT.nii.gz'))
+            nib.save(rapid_img.slicer[:, :, :, 3], os.path.join(pt_path, 'RAPID_TMAX.nii.gz'))
+
         if 'RAPID_TMAX_C.nii.gz' in os.listdir(pt_path):
             os.rename(os.path.join(pt_path, 'RAPID_TMAX.nii.gz'), os.path.join(pt_path, 'RAPID_TMAX_raw.nii.gz'))
             os.rename(os.path.join(pt_path, 'RAPID_TMAX_C.nii.gz'), os.path.join(pt_path, 'RAPID_TMAX.nii.gz'))
@@ -79,3 +97,4 @@ def rapid_map_conversion(input_path):
 if __name__ == '__main__':
     data_folder = '/mnt/sharedJH/NIFTI_Renamed'
     rapid_map_conversion(data_folder)
+

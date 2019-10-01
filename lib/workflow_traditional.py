@@ -4,7 +4,7 @@ import tempfile
 from joblib import Parallel, delayed
 import multiprocessing
 import nibabel as nib
-from intensity_normalization.normalize import zscore
+from lib.zscore_norm import zscore_normalize
 from nipype.interfaces import fsl
 from nipype.interfaces.ants import N4BiasFieldCorrection
 
@@ -75,7 +75,7 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 DWI_b0_final = nib.load(DWI_b0_path)
                 DWI_b0_mask_path = os.path.join(temp_dir, 'DWI_b0_mask.nii.gz')
                 mask = nib.load(DWI_b0_mask_path)
-                DWI_b0_norm = zscore.zscore_normalize(DWI_b0_final, mask)
+                DWI_b0_norm = zscore_normalize(DWI_b0_final, mask)
                 nib.save(DWI_b0_norm, DWI_b0_path)
 
                 print('.........................')
@@ -420,8 +420,8 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
 
 if __name__ == '__main__':
     atlas_folder = "/mnt/sharedJH/atlas"
-    data_folder = '/mnt/sharedJH/NIFTI_Renamed'
-    output_folder = '/mnt/sharedJH/Registered_output'
+    data_folder = '/mnt/sharedJH/NIFTI_Renamed_test'
+    output_folder = '/mnt/sharedJH/Registered_output_test'
 
     modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
 

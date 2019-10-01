@@ -149,14 +149,9 @@ def dcm_to_dcm_compress(dicom_dir, dicom_out_dir, level='series'):
 
 
 if __name__ == '__main__':
-    dicom_split_dir = "/media/harryzhang/VolumeWD/DataDump_MRN_series"
-    nifti_dir = "/media/harryzhang/VolumeWD/NIFTI_Image                                                                                                                                                                                                                                                                                                                                                                 s"
-    transcode_dicom_dir = "/media/harryzhang/VolumeWD/Dicom_transcoded"
+    dicom_split_dir = "/mnt/sharedJH/DataDump_MRN_series"
+    transcode_dicom_dir = "/mnt/sharedJH/Dicom_transcoded"
+    nifti_dir = "/mnt/sharedJH/NIFTI_Images"
     dcm_to_dcm_compress(dicom_split_dir, transcode_dicom_dir, 'series')
     dcm_to_nifti(transcode_dicom_dir, nifti_dir, True, 'dcm2niix')
-
-
-
-
-
 

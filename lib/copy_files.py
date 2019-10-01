@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     rename_and_copy(ids, nifti_input_dir, nifti_output_dir)
     unique_cases = check_unique_cases(nifti_input_dir)
-    with open('/home/harryzhang/Desktop/unique_cases.csv','w') as myfile:
+    with open('/home/harryzhang/Desktop/unique_cases.csv', 'w') as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         wr.writerow(unique_cases)
 
