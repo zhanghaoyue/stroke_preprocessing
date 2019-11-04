@@ -39,18 +39,18 @@ if __name__ == '__main__':
     atlas_folder = "/mnt/sharedJH/atlas"
     output_folder = '/mnt/sharedJH/Registered_output'
     output_folder_new = '/mnt/sharedJH/Registered_output_NewCases'
-    '''
+
     # if true, series level, if false, study level
-    dcm_to_nifti(dicom_new_dir, nifti_input_dir, False, 'dcm2niix')
+    # dcm_to_nifti(dicom_new_dir, nifti_input_dir, False, 'dcm2niix')
 
-    copy_files.rename_and_copy(ids, nifti_input_dir, nifti_output_dir_new)
-    unique_cases = copy_files.check_unique_cases(nifti_input_dir)
+    # copy_files.rename_and_copy(ids, nifti_input_dir, nifti_output_dir_new)
+    # unique_cases = copy_files.check_unique_cases(nifti_input_dir)
 
-    with open('/home/harryzhang/Desktop/unique_cases.csv', 'w') as myfile:
-        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-        wr.writerow(unique_cases)
-    '''
-    rc.rapid_map_conversion(nifti_output_dir_new)
+    # with open('/home/harryzhang/Desktop/unique_cases.csv', 'w') as myfile:
+    #    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+    #    wr.writerow(unique_cases)
+
+    # rc.rapid_map_conversion(nifti_output_dir_new)
 
     modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
 

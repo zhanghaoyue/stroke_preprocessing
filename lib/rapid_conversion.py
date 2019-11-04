@@ -30,8 +30,10 @@ def rapid_map_conversion(input_path):
 
         img = 'RAPID_All.nii.gz'
         img_path = os.path.join(pt_path, img)
+        print(pt)
         if os.path.exists(img_path):
             rapid_img = nib.load(os.path.join(pt_path, img))
+            print(rapid_img.slicer[:, :, :, 0])
             nib.save(rapid_img.slicer[:, :, :, 0], os.path.join(pt_path, 'RAPID_CBV.nii.gz'))
             nib.save(rapid_img.slicer[:, :, :, 1], os.path.join(pt_path, 'RAPID_CBF.nii.gz'))
             nib.save(rapid_img.slicer[:, :, :, 2], os.path.join(pt_path, 'RAPID_MTT.nii.gz'))

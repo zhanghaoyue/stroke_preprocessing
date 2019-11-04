@@ -7,6 +7,7 @@ import nibabel as nib
 from lib.zscore_norm import zscore_normalize
 from nipype.interfaces import fsl
 from nipype.interfaces.ants import N4BiasFieldCorrection
+import subprocess
 
 
 def preprocess(data_dir, subject, atlas_dir, output_dir):
@@ -119,7 +120,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     DWI_b1000_final = nib.load(DWI_b1000_path)
                     DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     mask = nib.load(DWI_b0_mask_path)
-                    DWI_b1000_norm = zscore.zscore_normalize(DWI_b1000_final, mask)
+                    DWI_b1000_norm = zscore_normalize(DWI_b1000_final, mask)
                     nib.save(DWI_b1000_norm, DWI_b1000_path)
 
                     print('DWI coregistration done...')
@@ -158,7 +159,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     FLAIR_final = nib.load(FLAIR_path)
                     DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     mask = nib.load(DWI_b0_mask_path)
-                    FLAIR_norm = zscore.zscore_normalize(FLAIR_final, mask)
+                    FLAIR_norm = zscore_normalize(FLAIR_final, mask)
                     nib.save(FLAIR_norm, FLAIR_path)
 
                     print('FLAIR coregistration done...')
@@ -200,7 +201,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     ADC_final = nib.load(ADC_path)
                     DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     mask = nib.load(DWI_b0_mask_path)
-                    ADC_norm = zscore.zscore_normalize(ADC_final, mask)
+                    ADC_norm = zscore_normalize(ADC_final, mask)
                     nib.save(ADC_norm, ADC_path)
 
                     print('ADC coregistration done...')
@@ -241,7 +242,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     TMAX_final = nib.load(TMAX_path)
                     DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     mask = nib.load(DWI_b0_mask_path)
-                    TMAX_norm = zscore.zscore_normalize(TMAX_final, mask)
+                    TMAX_norm = zscore_normalize(TMAX_final, mask)
                     nib.save(TMAX_norm, TMAX_path)
 
                     print('TMAX coregistration done...')
@@ -282,7 +283,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     TTP_final = nib.load(TTP_path)
                     DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     mask = nib.load(DWI_b0_mask_path)
-                    TTP_norm = zscore.zscore_normalize(TTP_final, mask)
+                    TTP_norm = zscore_normalize(TTP_final, mask)
                     nib.save(TTP_norm, TTP_path)
 
                     print('TTP coregistration done...')
@@ -323,7 +324,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     CBF_final = nib.load(CBF_path)
                     DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     mask = nib.load(DWI_b0_mask_path)
-                    CBF_norm = zscore.zscore_normalize(CBF_final, mask)
+                    CBF_norm = zscore_normalize(CBF_final, mask)
                     nib.save(CBF_norm, CBF_path)
 
                     print('CBF coregistration done...')
@@ -364,7 +365,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     CBV_final = nib.load(CBV_path)
                     DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     mask = nib.load(DWI_b0_mask_path)
-                    CBV_norm = zscore.zscore_normalize(CBV_final, mask)
+                    CBV_norm = zscore_normalize(CBV_final, mask)
                     nib.save(CBV_norm, CBV_path)
 
                     print('CBV coregistration done...')
@@ -405,7 +406,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     MTT_final = nib.load(MTT_path)
                     DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     mask = nib.load(DWI_b0_mask_path)
-                    MTT_norm = zscore.zscore_normalize(MTT_final, mask)
+                    MTT_norm = zscore_normalize(MTT_final, mask)
                     nib.save(MTT_norm, MTT_path)
 
                     print('MTT coregistration done...')
@@ -418,12 +419,45 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
         print('patient %s coregistration on modality %s done' % (subject, modality))
 
 
+def hist_match(data_dir, subject, modality, ref_dir, output_dir):
+    # register with different modality
+    if modality == 'DWI_b1000':
+        if not os.path.exists(os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')):
+            if os.path.exists(os.path.join(data_dir, subject, 'DWI_b1000.nii.gz')):
+                input_volume = os.path.join(data_dir, subject, 'DWI_b1000.nii.gz')
+                ref_volume = os.path.join(ref_dir, 'DWI_b1000.nii.gz')
+                output_volume = os.path.join(output_dir, subject, 'DWI.nii.gz')
+                subprocess.call('~/toolbox/Slicer-4.10.2-linux-amd64/Slicer --launch HistogramMatching \
+                                -- %s %s %s' % (input_volume,
+                                                ref_volume,
+                                                output_volume),
+                                shell=True)
+                print('DWI histogram matching done...')
+
+    if modality == 'FLAIR':
+        if not os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
+            if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
+                input_volume = os.path.join(data_dir, subject, 'FLAIR.nii.gz')
+                ref_volume = os.path.join(ref_dir, 'FLAIR.nii.gz')
+                output_volume = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
+                subprocess.call('~/toolbox/Slicer-4.10.2-linux-amd64/Slicer --launch HistogramMatching \
+                                -- %s %s %s' % (input_volume,
+                                                ref_volume,
+                                                output_volume),
+                                shell=True)
+                print('FLAIR histogram matching done...')
+
+
 if __name__ == '__main__':
     atlas_folder = "/mnt/sharedJH/atlas"
-    data_folder = '/mnt/sharedJH/NIFTI_Renamed_test'
-    output_folder = '/mnt/sharedJH/Registered_output_test'
+    data_folder = '/mnt/sharedJH/NIFTI_Renamed_for_correction'
+    output_folder = '/mnt/sharedJH/Registered_output_correction'
+    reference_dir = '/mnt/sharedJH/Registered_output/570244/'
+    in_histmatch_folder = '/mnt/sharedJH/Registered_output'
+    out_histmatch_folder = '/mnt/sharedJH/Registered_output_histmatch'
 
-    modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
+    # modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
+    modality_list = ['DWI_b1000', 'FLAIR']
 
     parallel = False
 
@@ -438,15 +472,21 @@ if __name__ == '__main__':
             coregister(data_folder, p, mo, atlas_folder, output_folder)
 
 
-    if not parallel:
-        for patient in os.listdir(data_folder):
+    # if not parallel:
+    #     for patient in os.listdir(data_folder):
+    #
+    #         if not os.path.isdir(os.path.join(output_folder, patient)):
+    #             os.makedirs(os.path.join(output_folder, patient))
+    #
+    #         preprocess(data_folder, patient, atlas_folder, output_folder)
+    #
+    #         for m in modality_list:
+    #             coregister(data_folder, patient, m, atlas_folder, output_folder)
+    # else:
+    #     results = Parallel(n_jobs=8)(delayed(complete_reg_steps)(i) for i in os.listdir(data_folder))
 
-            if not os.path.isdir(os.path.join(output_folder, patient)):
-                os.makedirs(os.path.join(output_folder, patient))
-
-            preprocess(data_folder, patient, atlas_folder, output_folder)
-
-            for m in modality_list:
-                coregister(data_folder, patient, m, atlas_folder, output_folder)
-    else:
-        results = Parallel(n_jobs=8)(delayed(complete_reg_steps)(i) for i in os.listdir(data_folder))
+    for patient in os.listdir(in_histmatch_folder):
+        if not os.path.isdir(os.path.join(out_histmatch_folder, patient)):
+            os.makedirs(os.path.join(out_histmatch_folder, patient))
+        for m in modality_list:
+            hist_match(in_histmatch_folder, patient, m, reference_dir, out_histmatch_folder)
