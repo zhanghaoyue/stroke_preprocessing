@@ -422,18 +422,29 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
 def hist_match(data_dir, subject, modality, ref_dir, output_dir):
     # register with different modality
     if modality == 'DWI_b1000':
+        if not os.path.exists(os.path.join(output_dir, subject, 'DWI_b0.nii.gz')):
+            if os.path.exists(os.path.join(data_dir, subject, 'DWI_b0.nii.gz')):
+                input_volume = os.path.join(data_dir, subject, 'DWI_b0.nii.gz')
+                ref_volume = os.path.join(ref_dir, 'DWI_b0.nii.gz')
+                output_volume = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                subprocess.call('~/toolbox/Slicer-4.10.2-linux-amd64/Slicer --launch HistogramMatching \
+                                -- %s %s %s' % (input_volume,
+                                                ref_volume,
+                                                output_volume),
+                                shell=True)
+                print('T2 histogram matching done...')
+    if modality == 'DWI_b1000':
         if not os.path.exists(os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')):
             if os.path.exists(os.path.join(data_dir, subject, 'DWI_b1000.nii.gz')):
                 input_volume = os.path.join(data_dir, subject, 'DWI_b1000.nii.gz')
                 ref_volume = os.path.join(ref_dir, 'DWI_b1000.nii.gz')
-                output_volume = os.path.join(output_dir, subject, 'DWI.nii.gz')
+                output_volume = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
                 subprocess.call('~/toolbox/Slicer-4.10.2-linux-amd64/Slicer --launch HistogramMatching \
                                 -- %s %s %s' % (input_volume,
                                                 ref_volume,
                                                 output_volume),
                                 shell=True)
                 print('DWI histogram matching done...')
-
     if modality == 'FLAIR':
         if not os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
             if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
@@ -456,22 +467,21 @@ if __name__ == '__main__':
     in_histmatch_folder = '/mnt/sharedJH/Registered_output'
     out_histmatch_folder = '/mnt/sharedJH/Registered_output_histmatch'
 
-    # modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
-    modality_list = ['DWI_b1000', 'FLAIR']
+    modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
+    modality_list_histmatch = ['DWI_b0', 'DWI_b1000', 'FLAIR']
 
     parallel = False
 
-
-    def complete_reg_steps(p):
-        if not os.path.isdir(os.path.join(output_folder, p)):
-            os.makedirs(os.path.join(output_folder, p))
-
-        preprocess(data_folder, p, atlas_folder, output_folder)
-
-        for mo in modality_list:
-            coregister(data_folder, p, mo, atlas_folder, output_folder)
-
-
+    # def complete_reg_steps(p):
+    #     if not os.path.isdir(os.path.join(output_folder, p)):
+    #         os.makedirs(os.path.join(output_folder, p))
+    #
+    #     preprocess(data_folder, p, atlas_folder, output_folder)
+    #
+    #     for mo in modality_list:
+    #         coregister(data_folder, p, mo, atlas_folder, output_folder)
+    #
+    #
     # if not parallel:
     #     for patient in os.listdir(data_folder):
     #
@@ -488,5 +498,5 @@ if __name__ == '__main__':
     for patient in os.listdir(in_histmatch_folder):
         if not os.path.isdir(os.path.join(out_histmatch_folder, patient)):
             os.makedirs(os.path.join(out_histmatch_folder, patient))
-        for m in modality_list:
+        for m in modality_list_histmatch:
             hist_match(in_histmatch_folder, patient, m, reference_dir, out_histmatch_folder)
