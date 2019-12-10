@@ -30,20 +30,22 @@ if __name__ == '__main__':
     # original 461 patients, data in series level (each patient folder contains series folder)
     dicom_split_dir = "/mnt/sharedJH/DataDump_MRN_series"
     # new cases added in this folder, data in study level (each patient folder contains all series)
-    dicom_new_dir = "/mnt/sharedJH/DataDump_NewCases_Batch2"
+    dicom_new_dir = "/mnt/sharedJH/DataDump_NewCases_Batch1"
     # if decompress first, use this dicom folder
     transcode_dicom_dir = "/mnt/sharedJH/Dicom_transcoded"
     nifti_input_dir = "/mnt/sharedJH/NIFTI_Images"
     nifti_output_dir = '/media/harryzhang/VolumeWD/NIFTI_Renamed'
-    nifti_output_dir_new = '/mnt/sharedJH/NIFTI_Renamed_NewCases_Batch2'
+    nifti_output_dir_new = '/mnt/sharedJH/NIFTI_Renamed_NewCases_Batch1'
     atlas_folder = "/mnt/sharedJH/atlas"
     output_folder = '/mnt/sharedJH/Registered_output'
-    output_folder_new = '/mnt/sharedJH/Registered_output_NewCases_Batch2'
+    output_folder_new = '/mnt/sharedJH/Registered_output_NewCases_Batch1'
 
+    # transcode first
+    dcm_to_dcm_compress(dicom_new_dir, transcode_dicom_dir, 'study')
     # if true, series level, if false, study level
-    # dcm_to_nifti(dicom_new_dir, nifti_input_dir, False, 'dcm2niix')
+    dcm_to_nifti(transcode_dicom_dir, nifti_input_dir, False, 'dcm2niix')
 
-    # copy_files.rename_and_copy(ids, nifti_input_dir, nifti_output_dir_new)
+    copy_files.rename_and_copy(ids, nifti_input_dir, nifti_output_dir_new)
 
     # unique_cases = copy_files.check_unique_cases(nifti_output_dir_new)
     #
@@ -51,13 +53,13 @@ if __name__ == '__main__':
     #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
     #     wr.writerow(unique_cases)
 
-    # rc.rapid_map_conversion(nifti_output_dir_new)
-    #
+    rc.rapid_map_conversion(nifti_output_dir_new)
+
     # modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
     #
     # # if test or check for error cases, don't use parallel
     # parallel = False
-    #
+    # 
     # def complete_reg_steps(p):
     #     if not os.path.isdir(os.path.join(output_folder_new, p)):
     #         os.makedirs(os.path.join(output_folder_new, p))
