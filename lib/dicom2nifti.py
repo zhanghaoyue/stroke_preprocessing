@@ -127,24 +127,33 @@ do not work with this compression
 '''
 
 
-def dcm_to_dcm_compress(dicom_dir, dicom_out_dir, level='series'):
+def dcm_to_dcm_compress(dicom_dir, dicom_out_dir, level='series', method='dcm2dcm'):
     for patient in os.listdir(dicom_dir):
         path_dicom = os.path.join(dicom_dir, patient)
         path_out = os.path.join(dicom_out_dir, patient)
         if not os.path.exists(path_out):
             os.makedirs(path_out)
-        for s in os.listdir(path_dicom):
-            path_series = os.path.join(path_dicom, s)
-            path_series_out = os.path.join(path_out, s)
-            if level == 'series':
+        if level == 'series':
+            for s in os.listdir(path_dicom):
+                path_series = os.path.join(path_dicom, s)
+                path_series_out = os.path.join(path_out, s)
                 if not os.path.exists(path_series_out):
                     os.makedirs(path_series_out)
-                for i in os.listdir(path_series):
-                    dcm_in = os.path.join(path_series, i)
-                    dcm_out = os.path.join(path_series_out, i)
-                    subprocess.call('dcmdjpeg -v %s %s' % (dcm_in, dcm_out), shell=True)
-            elif level == 'study':
-                subprocess.call('dcmdjpeg -v %s %s' % (path_series, path_series_out), shell=True)
+                if method == 'dcm2dcm':
+                    subprocess.call("dcm2dcm --jpll %s %s" % (path_series, path_series_out), shell=True)
+                elif method == 'dcmdjpeg':
+                    for i in os.listdir(path_series):
+                        dcm_in = os.path.join(path_series, i)
+                        dcm_out = os.path.join(path_series_out, i)
+                        subprocess.call('dcmdjpeg -v %s %s' % (dcm_in, dcm_out), shell=True)
+        elif level == 'study':
+            if method == 'dcm2dcm':
+                subprocess.call("dcm2dcm --jpll %s %s" % (path_dicom, path_out), shell=True)
+            elif method == 'dcmdjpeg':
+                for s in os.listdir(path_dicom):
+                    path_series = os.path.join(path_dicom, s)
+                    path_series_out = os.path.join(path_out, s)
+                    subprocess.call('dcmdjpeg -v %s %s' % (path_series, path_series_out), shell=True)
         print('patient %s finished' % patient)
 
 
@@ -152,6 +161,6 @@ if __name__ == '__main__':
     dicom_split_dir = "/mnt/sharedJH/DataDump_NewCases_Batch1"
     transcode_dicom_dir = "/mnt/sharedJH/Dicom_transcoded"
     nifti_dir = "/mnt/sharedJH/NIFTI_Images"
-    dcm_to_dcm_compress(dicom_split_dir, transcode_dicom_dir, 'series')
+    dcm_to_dcm_compress(dicom_split_dir, transcode_dicom_dir, 'series', "dcm2dcm")
     dcm_to_nifti(transcode_dicom_dir, nifti_dir, True, 'dcm2niix')
 
