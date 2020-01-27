@@ -51,7 +51,7 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 flt = fsl.FLIRT(bins=640, cost_func='mutualinfo', interp='spline',
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=12)
                 flt.inputs.in_file = os.path.join(temp_dir, 'BET_b0_first_run_n4.nii.gz')
-                flt.inputs.reference = atlas_dir + '/mni152_2009_256.nii.gz'
+                flt.inputs.reference = atlas_dir + '/mni152_downsample.nii.gz'
                 flt.inputs.out_file = os.path.join(temp_dir, 'BET_b0_first_run_r.nii.gz')
                 flt.inputs.out_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
@@ -89,11 +89,11 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
 
 def coregister(data_dir, subject, modality, atlas_dir, output_dir):
     with tempfile.TemporaryDirectory() as temp_dir:
-
         # register with different modality
         if modality == 'DWI_b1000':
             if not os.path.exists(os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'DWI_b1000.nii.gz')):
+                    print('DWI coregistration starts...')
 
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'DWI_b1000.nii.gz')
@@ -123,7 +123,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     DWI_b1000_norm = zscore_normalize(DWI_b1000_final, mask)
                     nib.save(DWI_b1000_norm, DWI_b1000_path)
 
-                    print('DWI coregistration done...')
                 else:
                     pass
             else:
@@ -132,7 +131,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
-
+                    print('FLAIR coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'FLAIR.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'FLAIR_reorient.nii.gz')
@@ -142,7 +141,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180])
                     flt.inputs.in_file = os.path.join(temp_dir, 'FLAIR_reorient.nii.gz')
-                    flt.inputs.reference = atlas_dir + '/mni152_2009_256.nii.gz'
+                    flt.inputs.reference = atlas_dir + '/mni152_downsample.nii.gz'
                     flt.inputs.out_file = os.path.join(temp_dir, 'FLAIR_r.nii.gz')
                     flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                     res = flt.run()
@@ -162,7 +161,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     FLAIR_norm = zscore_normalize(FLAIR_final, mask)
                     nib.save(FLAIR_norm, FLAIR_path)
 
-                    print('FLAIR coregistration done...')
                 else:
                     pass
             else:
@@ -171,20 +169,22 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, subject, 'ADC.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'ADC.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
+                    print('FLAIR coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'ADC.nii.gz')
 
-                    reorient.inputs.out_file = os.path.join(output_dir, subject, 'ADC_reorient.nii.gz')
+                    reorient.inputs.out_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
                     res = reorient.run()
 
                     # register with ADC
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
-                                    searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
-                    flt.inputs.in_file = os.path.join(output_dir, subject, 'ADC_reorient.nii.gz')
-                    if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
+                                    searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180])
+                    flt.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
+                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     else:
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+
                     flt.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
                     flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                     res = flt.run()
@@ -203,8 +203,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     mask = nib.load(DWI_b0_mask_path)
                     ADC_norm = zscore_normalize(ADC_final, mask)
                     nib.save(ADC_norm, ADC_path)
-
-                    print('ADC coregistration done...')
                 else:
                     pass
             else:
@@ -213,6 +211,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, subject, 'TMAX.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'TMAX.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
+                    print('TMAX coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'TMAX.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'TMAX_reorient.nii.gz')
@@ -222,7 +221,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'TMAX_reorient.nii.gz')
-                    if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
+                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     else:
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
@@ -244,8 +243,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     mask = nib.load(DWI_b0_mask_path)
                     TMAX_norm = zscore_normalize(TMAX_final, mask)
                     nib.save(TMAX_norm, TMAX_path)
-
-                    print('TMAX coregistration done...')
                 else:
                     pass
             else:
@@ -254,6 +251,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, subject, 'TTP.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'TTP.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
+                    print('TTP coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'TTP.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'TTP_reorient.nii.gz')
@@ -263,7 +261,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'TTP_reorient.nii.gz')
-                    if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
+                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     else:
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
@@ -285,8 +283,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     mask = nib.load(DWI_b0_mask_path)
                     TTP_norm = zscore_normalize(TTP_final, mask)
                     nib.save(TTP_norm, TTP_path)
-
-                    print('TTP coregistration done...')
                 else:
                     pass
             else:
@@ -295,6 +291,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, subject, 'CBF.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'CBF.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
+                    print('CBF coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'CBF.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'CBF_reorient.nii.gz')
@@ -304,7 +301,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'CBF_reorient.nii.gz')
-                    if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
+                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     else:
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
@@ -326,8 +323,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     mask = nib.load(DWI_b0_mask_path)
                     CBF_norm = zscore_normalize(CBF_final, mask)
                     nib.save(CBF_norm, CBF_path)
-
-                    print('CBF coregistration done...')
                 else:
                     pass
             else:
@@ -336,6 +331,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, subject, 'CBV.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'CBV.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
+                    print('CBV coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'CBV.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'CBV_reorient.nii.gz')
@@ -345,7 +341,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'CBV_reorient.nii.gz')
-                    if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
+                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     else:
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
@@ -367,8 +363,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     mask = nib.load(DWI_b0_mask_path)
                     CBV_norm = zscore_normalize(CBV_final, mask)
                     nib.save(CBV_norm, CBV_path)
-
-                    print('CBV coregistration done...')
                 else:
                     pass
             else:
@@ -377,6 +371,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, subject, 'MTT.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'MTT.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
+                    print('MTT coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'MTT.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'MTT_reorient.nii.gz')
@@ -386,7 +381,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'MTT_reorient.nii.gz')
-                    if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
+                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     else:
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
@@ -408,8 +403,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     mask = nib.load(DWI_b0_mask_path)
                     MTT_norm = zscore_normalize(MTT_final, mask)
                     nib.save(MTT_norm, MTT_path)
-
-                    print('MTT coregistration done...')
                 else:
                     pass
             else:
