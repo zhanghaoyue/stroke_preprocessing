@@ -82,4 +82,4 @@ if __name__ == '__main__':
             for m in modality_list:
                 wt.coregister(nifti_output_dir, patient, m, atlas_folder, output_folder)
     else:
-        results = Parallel(n_jobs=6)(delayed(complete_reg_steps)(i) for i in os.listdir(nifti_output_dir))
+        results = Parallel(n_jobs=8)(delayed(complete_reg_steps)(i) for i in os.listdir(nifti_output_dir))

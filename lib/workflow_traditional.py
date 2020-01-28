@@ -115,6 +115,18 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     am.inputs.out_file = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
                     res = am.run()
 
+                    # N4 bias field correction
+                    n4 = N4BiasFieldCorrection()
+                    n4.inputs.dimension = 3
+                    n4.inputs.input_image = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
+                    n4.inputs.mask_image = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
+                    n4.inputs.bspline_fitting_distance = 300
+                    n4.inputs.shrink_factor = 3
+                    n4.inputs.n_iterations = [50, 50, 30, 20]
+                    n4.inputs.output_image = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
+                    res = n4.run()
+                    print('N4 Bias Field Correction running...')
+
                     # z score normalization
                     DWI_b1000_path = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
                     DWI_b1000_final = nib.load(DWI_b1000_path)
@@ -153,6 +165,18 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     am.inputs.out_file = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     res = am.run()
 
+                    # N4 bias field correction
+                    n4 = N4BiasFieldCorrection()
+                    n4.inputs.dimension = 3
+                    n4.inputs.input_image = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
+                    n4.inputs.mask_image = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
+                    n4.inputs.bspline_fitting_distance = 300
+                    n4.inputs.shrink_factor = 3
+                    n4.inputs.n_iterations = [50, 50, 30, 20]
+                    n4.inputs.output_image = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
+                    res = n4.run()
+                    print('N4 Bias Field Correction running...')
+
                     # z score normalization
                     FLAIR_path = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     FLAIR_final = nib.load(FLAIR_path)
@@ -169,22 +193,20 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, subject, 'ADC.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'ADC.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
-                    print('FLAIR coregistration starts...')
+                    print('ADC coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'ADC.nii.gz')
-
                     reorient.inputs.out_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
                     res = reorient.run()
 
                     # register with ADC
-                    flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
-                                    searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180])
+                    flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
+                                    searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
                     if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     else:
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
-
                     flt.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
                     flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                     res = flt.run()
@@ -414,7 +436,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
 
 def hist_match(data_dir, subject, modality, ref_dir, output_dir):
     # register with different modality
-    if modality == 'DWI_b1000':
+    if modality == 'DWI_b0':
         if not os.path.exists(os.path.join(output_dir, subject, 'DWI_b0.nii.gz')):
             if os.path.exists(os.path.join(data_dir, subject, 'DWI_b0.nii.gz')):
                 input_volume = os.path.join(data_dir, subject, 'DWI_b0.nii.gz')
