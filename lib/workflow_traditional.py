@@ -21,7 +21,6 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 res = reorient.run()
 
                 # robust fov to remove neck and lower head automatically
-
                 rf = fsl.utils.RobustFOV()
                 rf.inputs.in_file = os.path.join(temp_dir, 'DWI_b0_reorient.nii.gz')
                 rf.inputs.out_roi = os.path.join(temp_dir, 'DWI_b0_RF.nii.gz')
@@ -95,6 +94,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                 if os.path.exists(os.path.join(data_dir, subject, 'DWI_b1000.nii.gz')):
                     print('DWI coregistration starts...')
 
+                    # automatic reorient to MNI direction
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'DWI_b1000.nii.gz')
                     reorient.inputs.out_file = os.path.join(temp_dir, 'DWI_reorient.nii.gz')
@@ -114,18 +114,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     am.inputs.mask_file = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     am.inputs.out_file = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
                     res = am.run()
-
-                    # N4 bias field correction
-                    n4 = N4BiasFieldCorrection()
-                    n4.inputs.dimension = 3
-                    n4.inputs.input_image = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
-                    n4.inputs.mask_image = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
-                    n4.inputs.bspline_fitting_distance = 300
-                    n4.inputs.shrink_factor = 3
-                    n4.inputs.n_iterations = [50, 50, 30, 20]
-                    n4.inputs.output_image = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
-                    res = n4.run()
-                    print('N4 Bias Field Correction running...')
 
                     # z score normalization
                     DWI_b1000_path = os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')
@@ -164,18 +152,6 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     am.inputs.mask_file = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     am.inputs.out_file = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     res = am.run()
-
-                    # N4 bias field correction
-                    n4 = N4BiasFieldCorrection()
-                    n4.inputs.dimension = 3
-                    n4.inputs.input_image = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
-                    n4.inputs.mask_image = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
-                    n4.inputs.bspline_fitting_distance = 300
-                    n4.inputs.shrink_factor = 3
-                    n4.inputs.n_iterations = [50, 50, 30, 20]
-                    n4.inputs.output_image = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
-                    res = n4.run()
-                    print('N4 Bias Field Correction running...')
 
                     # z score normalization
                     FLAIR_path = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
@@ -431,6 +407,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                 pass
 
         print('.........................')
+
         print('patient %s coregistration on modality %s done' % (subject, modality))
 
 

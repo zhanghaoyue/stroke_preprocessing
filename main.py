@@ -30,15 +30,12 @@ if __name__ == '__main__':
     # original 461 patients, data in series level (each patient folder contains series folder)
     # dicom_split_dir = "/mnt/sharedJH/DataDump_MRN_series"
     # new cases added in this folder, data in study level (each patient folder contains all series)
-    dicom_new_dir = "/mnt/sharedJH/DataDump_NewCases_Batch1"
     # if decompress first, use this dicom folder
     transcode_dicom_dir = "/mnt/sharedJH/Dicom_transcoded"
     nifti_input_dir = "/mnt/sharedJH/NIFTI_Images"
     nifti_output_dir = '/mnt/sharedJH/NIFTI_Renamed'
-    nifti_output_dir_new = '/mnt/sharedJH/NIFTI_Renamed_NewCases_Batch1'
     atlas_folder = "/mnt/sharedJH/atlas"
     output_folder = '/mnt/sharedJH/Registered_output_ds'
-    output_folder_new = '/mnt/sharedJH/Registered_output_NewCases_Batch1'
 
     # # transcode first or if rapid map has issue, do dcm2dcm from dcm4che first, choose between dcm2dcm or dcmdjpeg
     # dcm_to_dcm_compress(dicom_new_dir, transcode_dicom_dir, 'study', 'dcm2dcm')
@@ -59,7 +56,7 @@ if __name__ == '__main__':
     modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
 
     # if test or check for error cases, don't use parallel
-    parallel = False
+    parallel = True
 
     def complete_reg_steps(p):
         if not os.path.isdir(os.path.join(output_folder, p)):
@@ -73,13 +70,15 @@ if __name__ == '__main__':
 
     if not parallel:
         for patient in os.listdir(nifti_output_dir):
+            if patient == '570251':
+                pass
+            else:
+                if not os.path.isdir(os.path.join(output_folder, patient)):
+                    os.makedirs(os.path.join(output_folder, patient))
 
-            if not os.path.isdir(os.path.join(output_folder, patient)):
-                os.makedirs(os.path.join(output_folder, patient))
+                wt.preprocess(nifti_output_dir, patient, atlas_folder, output_folder)
 
-            wt.preprocess(nifti_output_dir, patient, atlas_folder, output_folder)
-
-            for m in modality_list:
-                wt.coregister(nifti_output_dir, patient, m, atlas_folder, output_folder)
+                for m in modality_list:
+                    wt.coregister(nifti_output_dir, patient, m, atlas_folder, output_folder)
     else:
         results = Parallel(n_jobs=8)(delayed(complete_reg_steps)(i) for i in os.listdir(nifti_output_dir))
