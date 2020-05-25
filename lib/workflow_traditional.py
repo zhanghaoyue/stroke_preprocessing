@@ -87,9 +87,50 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
 
 
 def coregister(data_dir, subject, modality, atlas_dir, output_dir):
+    print(subject)
     with tempfile.TemporaryDirectory() as temp_dir:
         # register with different modality
-        if modality == 'DWI_b1000':
+
+        if modality == 'DWI_b500':
+            if not os.path.exists(os.path.join(output_dir, subject, 'DWI_b500.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, subject, 'DWI_b500.nii.gz')):
+                    print('DWI 500 coregistration starts...')
+                    print(modality)
+                    print(fsl.utils)
+                    # automatic reorient to MNI direction
+                    reorient = fsl.utils.Reorient2Std()
+                    reorient.inputs.in_file = os.path.join(data_dir, subject, 'DWI_b500.nii.gz')
+                    reorient.inputs.out_file = os.path.join(temp_dir, 'DWI_reorient.nii.gz')
+                    res = reorient.run()
+
+                    applyxfm = fsl.preprocess.ApplyXFM()
+                    applyxfm.inputs.in_file = os.path.join(data_dir, subject, 'DWI_b500.nii.gz')
+                    applyxfm.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                    applyxfm.inputs.out_file = os.path.join(temp_dir, 'DWI_r.nii.gz')
+                    applyxfm.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                    applyxfm.inputs.apply_xfm = True
+                    result = applyxfm.run()
+
+                    # apply skull stripping mask
+                    am = fsl.maths.ApplyMask()
+                    am.inputs.in_file = os.path.join(temp_dir, 'DWI_r.nii.gz')
+                    am.inputs.mask_file = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
+                    am.inputs.out_file = os.path.join(output_dir, subject, 'DWI_b500.nii.gz')
+                    res = am.run()
+
+                    # z score normalization
+                    DWI_b500_path = os.path.join(output_dir, subject, 'DWI_b500.nii.gz')
+                    DWI_b500_final = nib.load(DWI_b500_path)
+                    DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
+                    mask = nib.load(DWI_b0_mask_path)
+                    DWI_b500_norm = zscore_normalize(DWI_b500_final, mask)
+                    nib.save(DWI_b500_norm, DWI_b500_path)
+
+                else:
+                    pass
+            else:
+                pass
+        elif modality == 'DWI_b1000':
             if not os.path.exists(os.path.join(output_dir, subject, 'DWI_b1000.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'DWI_b1000.nii.gz')):
                     print('DWI coregistration starts...')

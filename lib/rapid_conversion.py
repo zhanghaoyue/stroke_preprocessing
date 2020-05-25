@@ -19,14 +19,21 @@ def rapid_map_conversion(input_path):
                'RAPID_MTT.nii.gz': 255}
 
     for pt in os.listdir(input_path):
+        print(pt)
         pt_path = os.path.join(input_path, pt)
         img = 'DWI.nii.gz'
 
         img_path = os.path.join(pt_path, img)
         if os.path.exists(img_path):
-            dwi_img = nib.load(img_path)
-            nib.save(dwi_img.slicer[:, :, :, 0], os.path.join(pt_path, 'DWI_b0.nii.gz'))
-            nib.save(dwi_img.slicer[:, :, :, 2], os.path.join(pt_path, 'DWI_b1000.nii.gz'))
+
+            if os.path.exists(os.path.join(pt_path, 'DWI.bval')):
+                f = open(os.path.join(pt_path, 'DWI.bval'), "r")
+                vol_list = f.read().replace("\n", "").split(' ')
+                dwi_img = nib.load(img_path)
+                for vol in range(dwi_img.shape[3]):
+                    nib.save(dwi_img.slicer[:, :, :, vol], os.path.join(pt_path, 'DWI_b%s.nii.gz'%vol_list[vol]))
+            else:
+                print('NO BVALUE FILE MUST CHECK FOR PT %s' % str(pt))
 
         img = 'RAPID_All.nii.gz'
         img_path = os.path.join(pt_path, img)
@@ -80,7 +87,7 @@ def rapid_map_conversion(input_path):
                                 voxel = gray[z, x, y]
                                 # if it's not background? maybe there's a better/faster way to do this
                                 if sum(voxel) > 0:
-                                    # get the inverse, and multiply by the scale of the image 
+                                    # get the inverse, and multiply by the scale of the image
                                     h = (1 - voxel[0]) * rap_ims[file]
                                     # add to the array
                                     gray_copy[z, x, y] = h

@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="haoyuezhang@10.1.122.24:15237">
+  <component name="PublishConfigData" autoUpload="Always" serverName="jennifer@10.9.97.12:22 password">
     <serverData>
-      <paths name="haoyuezhang@10.1.122.24:15237">
+      <paths name="jennifer@10.9.97.12:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/tmp/pycharm_project_256" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/jennifer/PycharmProjects/stroke_preprocessing" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="jennifer@10.9.97.12:22 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/jennifer/PycharmProjects/stroke_preprocessing" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>

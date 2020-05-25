@@ -38,16 +38,28 @@ def rename_and_copy(new_ids, input_dir, output_dir):
                     patient_row.iloc[0, patient_row.columns.get_loc(new_dict[nifti_name])] = 1
                     shutil.copy(os.path.join(pt_dir, nifti_file), os.path.join(nii_output,
                                                                                new_dict[nifti_name]+'.nii.gz'))
-            elif nifti_file.endswith('.nii.gz'):
-                nifti_name = nifti_file[:-7]
+            # elif nifti_file.endswith('.nii.gz'):
+            #     nifti_name = nifti_file[:-7]
+            #     if nifti_name in new_dict.keys():
+            #         patient_row.iloc[0, patient_row.columns.get_loc(new_dict[nifti_name])] = 1
+            #         shutil.copy(os.path.join(pt_dir, nifti_file), os.path.join(nii_output,
+            #                                                                    new_dict[nifti_name]+'.nii.gz'))
+            # elif nifti_file.endswith('.bval'):
+            #     nifti_name = nifti_file[:-5]
+            #     if nifti_name in new_dict.keys():
+            #         patient_row.iloc[0, patient_row.columns.get_loc(new_dict[nifti_name])] = 1
+            #         shutil.copy(os.path.join(pt_dir, nifti_file), os.path.join(nii_output,
+            #                                                                    new_dict[nifti_name]+'.bval'))
+            elif nifti_file.endswith('.bvec'):
+                nifti_name = nifti_file[:-5]
                 if nifti_name in new_dict.keys():
                     patient_row.iloc[0, patient_row.columns.get_loc(new_dict[nifti_name])] = 1
                     shutil.copy(os.path.join(pt_dir, nifti_file), os.path.join(nii_output,
-                                                                               new_dict[nifti_name]+'.nii.gz'))
-            print(patient_row)
+                                                                               new_dict[nifti_name]+'.bvec'))
+            # print(patient_row)
         patient_series_info = patient_series_info.append(patient_row, ignore_index=True)
 
-    patient_series_info.to_csv('/home/harryzhang/Desktop/patient_series_info.csv', index=False)
+    # patient_series_info.to_csv('/home/harryzhang/Desktop/patient_series_info.csv', index=False)
 
 
 # check unique cases
