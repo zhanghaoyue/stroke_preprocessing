@@ -79,8 +79,8 @@ def check_unique_cases(clean_dir):
 
 if __name__ == '__main__':
     ids = pd.read_csv('/home/harryzhang/PACS_QUERY/image_dict.csv', header=None)
-    nifti_input_dir = '/media/harryzhang/VolumeWD/NIFTI_Images'
-    nifti_output_dir = '/media/harryzhang/VolumeWD/NIFTI_Renamed'
+    nifti_input_dir = '/mnt/sharedJH/NIFTI_Images'
+    nifti_output_dir = '/mnt/sharedJH/NIFTI_Renamed'
 
     rename_and_copy(ids, nifti_input_dir, nifti_output_dir)
     unique_cases = check_unique_cases(nifti_input_dir)
