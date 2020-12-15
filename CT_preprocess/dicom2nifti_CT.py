@@ -3,6 +3,8 @@ from shutil import copyfile
 import pydicom
 from nipype.interfaces.dcm2nii import Dcm2niix, Dcm2nii
 import subprocess
+import dicom2nifti
+
 
 """
 Step 0
@@ -158,9 +160,26 @@ def dcm_to_dcm_compress(dicom_dir, dicom_out_dir, level='series', method='dcm2dc
 
 
 if __name__ == '__main__':
-    dicom_split_dir = "C:/Users/harry/Box/UCI Stroke Data Upload"
-    transcode_dicom_dir = "G:/StrokeResearch/CT/UCI/Dicom_transcoded"
-    nifti_dir = "G:/StrokeResearch/CT/UCI/NIFTI_Images"
-    dcm_to_dcm_compress(dicom_split_dir, transcode_dicom_dir, 'series', "dcm2dcm")
-    dcm_to_nifti(transcode_dicom_dir, nifti_dir, True, 'dcm2niix')
+    dicom_split_dir = "/mnt/DataWD/ct_studies"
+    transcode_dicom_dir = "/mnt/DataWD/CT/UCLA/ct_transcoded"
+    nifti_dir = "/mnt/DataWD/CT/UCLA/NIFTI_Images"
+    # dcm_to_dcm_compress(dicom_split_dir, transcode_dicom_dir, 'series', "dcmdjpeg")
+    dcm_to_nifti(dicom_split_dir, nifti_dir, True, 'dcm2niix')
+
+    # testing
+    import dicom2nifti
+    import dicom2nifti.settings as settings
+    import os
+
+    settings.disable_validate_slice_increment()
+    settings.disable_validate_orthogonal()
+    settings.enable_resampling()
+    settings.set_resample_spline_interpolation_order(1)
+    settings.set_resample_padding(-1000)
+    settings.disable_validate_slicecount()
+
+    os.makedirs("/mnt/DataWD/CT_test/2394616/")
+    os.makedirs("/mnt/DataWD/CT_test/0194078/")
+    dicom2nifti.convert_directory("/mnt/DataWD/ct_studies/2394616/", "/mnt/DataWD/CT_test/2394616/", reorient=False)
+    dicom2nifti.convert_directory("/mnt/DataWD/ct_studies/0194078/", "/mnt/DataWD/CT_test/0194078/", reorient=False)
 
