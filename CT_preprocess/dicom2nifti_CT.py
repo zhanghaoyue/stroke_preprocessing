@@ -88,13 +88,11 @@ def dcm_to_nifti(dicom_dir, nifti_dir, split=True, tool_used='dcm2niix'):
             os.makedirs(path_nifti)
         if not split:
             if tool_used == 'dcm2niix':
-                converter = Dcm2niix()
-                converter.inputs.source_dir = path_dicom
-                converter.inputs.compression = 5
-                converter.inputs.merge_imgs = True
-                converter.inputs.out_filename = '%d'
-                converter.inputs.output_dir = path_nifti
-                converter.run()
+                try:
+                    subprocess.call('dcm2niix -z y -f %%d -o %s %s' %
+                                    (path_nifti, path_dicom), shell=True)
+                except:
+                    pass
             elif tool_used == 'dcm2nii':
                 converter = Dcm2nii()
                 converter.inputs.source_dir = path_dicom
@@ -105,16 +103,16 @@ def dcm_to_nifti(dicom_dir, nifti_dir, split=True, tool_used='dcm2niix'):
                 raise Warning("tool used does not exist, please enter dcm2nii or dcm2niix")
 
         else:
-            for s in os.listdir(path_dicom):
+            for i in os.listdir(path_dicom):
                 if tool_used == 'dcm2niix':
                     try:
-                        subprocess.call('/home/harryzhang/toolbox/dcm2niix/console/dcm2niix -m y -5 -f %%d -o %s %s' %
-                                        (path_nifti, path_dicom + '/'+s), shell=True)
+                        subprocess.call('dcm2niix -z y -f %%d -o %s %s' %
+                                        (path_nifti, path_dicom + '/'+i), shell=True)
                     except:
                         pass
                 elif tool_used == 'dcm2nii':
                     converter = Dcm2nii()
-                    converter.inputs.source_dir = path_dicom + '/' + s
+                    converter.inputs.source_dir = path_dicom + '/' + i
                     converter.inputs.gzip_output = True
                     converter.inputs.output_dir = path_nifti
                     converter.run()
@@ -164,22 +162,22 @@ if __name__ == '__main__':
     transcode_dicom_dir = "/mnt/DataWD/CT/UCLA/ct_transcoded"
     nifti_dir = "/mnt/DataWD/CT/UCLA/NIFTI_Images"
     # dcm_to_dcm_compress(dicom_split_dir, transcode_dicom_dir, 'series', "dcmdjpeg")
-    dcm_to_nifti(dicom_split_dir, nifti_dir, True, 'dcm2niix')
+    dcm_to_nifti(dicom_split_dir, nifti_dir, False, 'dcm2niix')
 
-    # testing
-    import dicom2nifti
-    import dicom2nifti.settings as settings
-    import os
-
-    settings.disable_validate_slice_increment()
-    settings.disable_validate_orthogonal()
-    settings.enable_resampling()
-    settings.set_resample_spline_interpolation_order(1)
-    settings.set_resample_padding(-1000)
-    settings.disable_validate_slicecount()
-
-    os.makedirs("/mnt/DataWD/CT_test/2394616/")
-    os.makedirs("/mnt/DataWD/CT_test/0194078/")
-    dicom2nifti.convert_directory("/mnt/DataWD/ct_studies/2394616/", "/mnt/DataWD/CT_test/2394616/", reorient=False)
-    dicom2nifti.convert_directory("/mnt/DataWD/ct_studies/0194078/", "/mnt/DataWD/CT_test/0194078/", reorient=False)
+    # # testing
+    # import dicom2nifti
+    # import dicom2nifti.settings as settings
+    # import os
+    #
+    # settings.disable_validate_slice_increment()
+    # settings.disable_validate_orthogonal()
+    # settings.enable_resampling()
+    # settings.set_resample_spline_interpolation_order(1)
+    # settings.set_resample_padding(-1000)
+    # settings.disable_validate_slicecount()
+    #
+    # os.makedirs("/mnt/DataWD/CT_test/2394616/")
+    # os.makedirs("/mnt/DataWD/CT_test/0194078/")
+    # dicom2nifti.convert_directory("/mnt/DataWD/ct_studies/2394616/", "/mnt/DataWD/CT_test/2394616/", reorient=False)
+    # dicom2nifti.convert_directory("/mnt/DataWD/ct_studies/0194078/", "/mnt/DataWD/CT_test/0194078/", reorient=False)
 
