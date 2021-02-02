@@ -11,7 +11,7 @@ import subprocess
 
 def preprocess(data_dir, subject, atlas_dir, output_dir):
     with tempfile.TemporaryDirectory() as temp_dir:
-        if not os.path.exists(os.path.join(output_dir, subject, 'FLAIR_r.nii.gz')):
+        if not os.path.exists(os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')):
             if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
                 # reorient to MNI standard direction
                 reorient = fsl.utils.Reorient2Std()
@@ -30,7 +30,7 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 btr1 = fsl.BET()
                 btr1.inputs.in_file = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
                 btr1.inputs.robust = True
-                btr1.inputs.frac = 0.1
+                btr1.inputs.frac = 0.2
                 btr1.inputs.out_file = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
                 btr1.run()
 
@@ -38,47 +38,59 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 print('N4 Bias Field Correction running...')
                 input_image = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
                 output_image = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
-                subprocess.call('/opt/ANTs/bin/N4BiasFieldCorrection --bspline-fitting [ 300 ] -d 3 '
+                subprocess.call('N4BiasFieldCorrection --bspline-fitting [ 300 ] -d 3 '
                                 '--input-image %s --convergence [ 50x50x30x20 ] --output %s --shrink-factor 3'
                                 % (input_image, output_image), shell=True)
 
                 # registration of FLAIR to MNI152 FLAIR template
                 print('ANTs registration...')
-                fixed_image = atlas_dir + '/flair_test.nii.gz'
-                moving_image = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
-                output_transform_prefix = 'transform_'
-                output_warped_image = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
-                subprocess.call('/opt/ANTs/bin/antsRegistration --collapse-output-transforms 0 --dimensionality 3 '
-                                '--initialize-transforms-per-stage 0 -n 8'
-                                '--interpolation Linear --output [%s, %s] '
-                                '--transform Affine[ 2.0 ] --metric Mattes[%s, %s, 1, 64, Random, 0.05 ] '
-                                '--metric CC[ %s, %s, 1, 32 ] '
-                                '--convergence [ 1500x200, 1e-08, 20 ] --smoothing-sigmas 1.0x0.0vox '
-                                '--shrink-factors 2x1 --use-estimate-learning-rate-once 1 --use-histogram-matching 1 '
-                                '--winsorize-image-intensities [ 0.0, 1.0 ] --write-composite-transform 1 -v 1'
-                                % (output_transform_prefix, output_warped_image, fixed_image, moving_image, fixed_image
-                                   , moving_image),
-                                shell=True)
-                import pdb
-                pdb.set_trace()
+                reg = Registration()
+                reg.inputs.fixed_image = atlas_dir + '/flair_test.nii.gz'
+                reg.inputs.moving_image = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
+                reg.inputs.output_transform_prefix = os.path.join(output_dir, subject, 'FLAIR_r_transform.mat')
+                reg.inputs.winsorize_upper_quantile = 0.99
+                reg.inputs.winsorize_lower_quantile = 0.01
+                reg.inputs.transforms = ['Affine', 'SyN']
+                reg.inputs.transform_parameters = [(2.0,), (0.25, 3.0, 0.0)]
+                reg.inputs.number_of_iterations = [[1500, 200], [100, 50, 30]]
+                reg.inputs.dimension = 3
+                reg.inputs.write_composite_transform = True
+                reg.inputs.collapse_output_transforms = False
+                reg.inputs.initialize_transforms_per_stage = False
+                reg.inputs.metric = ['Mattes', ['Mattes', 'CC']]
+                reg.inputs.metric_weight = [1, [.5, .5]]  # Default (value ignored currently by ANTs)
+                reg.inputs.radius_or_number_of_bins = [32, [32, 4]]
+                reg.inputs.sampling_strategy = ['Random', None]
+                reg.inputs.sampling_percentage = [0.05, [0.05, 0.10]]
+                reg.inputs.convergence_threshold = [1.e-8, 1.e-9]
+                reg.inputs.convergence_window_size = [20] * 2
+                reg.inputs.smoothing_sigmas = [[1, 0], [2, 1, 0]]
+                reg.inputs.sigma_units = ['vox'] * 2
+                reg.inputs.shrink_factors = [[2, 1], [3, 2, 1]]
+                reg.inputs.use_estimate_learning_rate_once = [True, True]
+                reg.inputs.use_histogram_matching = [True, True]  # This is the default
+                reg.inputs.output_warped_image = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
+                reg.inputs.verbose = True
+                reg.run()
+
                 # second pass of BET skull stripping
                 print('BET skull stripping...')
                 btr2 = fsl.BET()
                 btr2.inputs.in_file = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
                 btr2.inputs.robust = True
-                btr2.inputs.frac = 0.2
+                btr2.inputs.frac = 0.1
                 btr2.inputs.mask = True
                 btr2.inputs.out_file = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
                 btr2.run()
 
                 # copy mask file to output folder
-                shutil.copy2(os.path.join(output_dir, subject, 'FLAIR_r_mask.nii.gz'),
-                             os.path.join(temp_dir, 'FLAIR_r_mask.nii.gz'))
+                shutil.copy2(os.path.join(output_dir, subject, 'ANTS_FLAIR_r_mask.nii.gz'),
+                             os.path.join(temp_dir, 'ANTS_FLAIR_r_mask.nii.gz'))
 
                 # z score normalization
                 FLAIR_path = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
                 FLAIR_final = nib.load(FLAIR_path)
-                FLAIR_mask_path = os.path.join(temp_dir, 'FLAIR_r_mask.nii.gz')
+                FLAIR_mask_path = os.path.join(temp_dir, 'ANTS_FLAIR_r_mask.nii.gz')
                 mask = nib.load(FLAIR_mask_path)
                 FLAIR_norm = zscore_normalize(FLAIR_final, mask)
                 nib.save(FLAIR_norm, FLAIR_path)
@@ -96,9 +108,9 @@ def coregister(data_dir, subject, modality, output_dir):
     with tempfile.TemporaryDirectory() as temp_dir:
         # register with different modality
         if modality == 'PWI':
-            if not os.path.exists(os.path.join(output_dir, subject, 'PWI.nii.gz')):
+            if not os.path.exists(os.path.join(output_dir, subject, 'ANTS_PWI_r_final.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'PWI.nii.gz')) and os.path.exists(os.path.join(
-                        output_dir, subject, 'FLAIR_r_transform.mat')):
+                        output_dir, subject, 'FLAIR_r_transform.matComposite.h5')):
                     print('PWI coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'PWI.nii.gz')
@@ -106,19 +118,21 @@ def coregister(data_dir, subject, modality, output_dir):
                     res = reorient.run()
 
                     # apply registration transformation on PWI
-                    input_image = os.path.join(data_dir, subject, 'PWI.nii.gz')
-                    reference_image = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
-                    output_image = os.path.join(output_dir, subject, 'ANTS_PWI_r.nii.gz')
-                    transforms = os.path.join(output_dir, subject, 'FLAIR_r_transform.matComposite.h5')
-                    subprocess.call("/opt/ANTs/bin/antsApplyTransforms --default-value 0 --interpolation Linear "
-                                    "--dimensionality 3 --input-image-type 3 --input %s --reference-image %s "
-                                    "--output %s --transform [%s, 0 ]"
-                                    % (input_image, reference_image, output_image, transforms), shell=True)
+                    at = ApplyTransforms()
+                    at.inputs.dimension = 3
+                    at.inputs.input_image_type = 3
+                    at.inputs.input_image = os.path.join(data_dir, subject, 'PWI.nii.gz')
+                    at.inputs.reference_image = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
+                    at.inputs.output_image = os.path.join(output_dir, subject, 'ANTS_PWI_r.nii.gz')
+                    at.inputs.interpolation = 'Linear'
+                    at.inputs.default_value = 0
+                    at.inputs.transforms = os.path.join(output_dir, subject, 'FLAIR_r_transform.matComposite.h5')
+                    at.run()
 
                     # apply skull stripping mask
                     am = fsl.maths.ApplyMask()
                     am.inputs.in_file = os.path.join(output_dir, subject, 'ANTS_PWI_r.nii.gz')
-                    am.inputs.mask_file = os.path.join(output_dir, subject, 'FLAIR_r_mask.nii.gz')
+                    am.inputs.mask_file = os.path.join(output_dir, subject, 'ANTS_FLAIR_r_mask.nii.gz')
                     am.inputs.out_file = os.path.join(output_dir, subject, 'ANTS_PWI_r_final.nii.gz')
                     am.run()
                 else:
@@ -128,14 +142,14 @@ def coregister(data_dir, subject, modality, output_dir):
 
 
 if __name__ == '__main__':
-    atlas_folder = "/media/bitlockermount/StrokeResearch/vascular_territory_template"
-    data_folder = '/media/bitlockermount/StrokeResearch/stroke_MRI/stroke_MRI/Original_nifti'
-    output_folder = '/media/bitlockermount/StrokeResearch/stroke_MRI/stroke_MRI/stroke_perfusion'
-    reference_dir = '/media/bitlockermount/StrokeResearch/stroke_MRI/stroke_MRI/Registered_output_histmatch/570244/'
-    in_histmatch_folder = '/media/bitlockermount/StrokeResearch/stroke_MRI/stroke_MRI/Registered_output'
-    out_histmatch_folder = '/media/bitlockermount/StrokeResearch/stroke_MRI/stroke_MRI/Registered_output_histmatch'
+    atlas_folder = "/data/haoyuezhang/data/vascular_territory_template"
+    data_folder = '/data/haoyuezhang/data/stroke_MRI/stroke_MRI/Original_nifti'
+    output_folder = '/data/haoyuezhang/data/stroke_MRI/stroke_perfusion'
+    reference_dir = '/data/haoyuezhang/data/stroke_MRI/stroke_MRI/Registered_output_histmatch/570244/'
+    in_histmatch_folder = '/data/haoyuezhang/data/stroke_MRI/stroke_MRI/Registered_output'
+    out_histmatch_folder = '/data/haoyuezhang/data/stroke_MRI/stroke_MRI/Registered_output_histmatch'
 
-    modality_list = ['FLAIR', 'PWI']
+    modality_list = ['PWI']
     modality_list_histmatch = ['FLAIR', 'PWI']
 
     parallel = False
