@@ -24,7 +24,7 @@ def rapid_map_conversion(input_path):
         img = 'DWI.nii.gz'
 
         img_path = os.path.join(pt_path, img)
-        if os.path.exists(img_path):
+        if os.path.exists(img_path) and pt not in [470020]:
 
             if os.path.exists(os.path.join(pt_path, 'DWI.bval')):
                 f = open(os.path.join(pt_path, 'DWI.bval'), "r")
@@ -38,7 +38,7 @@ def rapid_map_conversion(input_path):
         img = 'RAPID_All.nii.gz'
         img_path = os.path.join(pt_path, img)
         print(pt)
-        if os.path.exists(img_path):
+        if os.path.exists(img_path) :
             rapid_img = nib.load(os.path.join(pt_path, img))
 
             if len(rapid_img.get_data().shape) == 4:
@@ -68,7 +68,7 @@ def rapid_map_conversion(input_path):
             os.rename(os.path.join(pt_path, 'RAPID_MTT.nii.gz'), os.path.join(pt_path, 'RAPID_MTT_raw.nii.gz'))
             os.rename(os.path.join(pt_path, 'RAPID_MTT_C.nii.gz'), os.path.join(pt_path, 'RAPID_MTT.nii.gz'))
 
-        if not all(x in os.listdir(pt_path) for x in ['TMAX.nii.gz', 'CBF.nii.gz', 'MTT.nii.gz', 'CBV.nii.gz']):
+        if not all(x in os.listdir(pt_path) for x in ['TMAX.nii.gz', 'CBF.nii.gz', 'MTT.nii.gz', 'CBV.nii.gz']) and pt not in ['470020']:
             for file in os.listdir(pt_path):
 
                 if file in rap_ims.keys():

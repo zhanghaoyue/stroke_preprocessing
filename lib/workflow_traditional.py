@@ -216,17 +216,25 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     reorient.inputs.out_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
                     res = reorient.run()
 
-                    # register with ADC
-                    flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
-                                    searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
-                    flt.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
-                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
-                        flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
-                    else:
-                        flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
-                    flt.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
-                    flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
-                    res = flt.run()
+                    # # register with ADC
+                    # flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
+                    #                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
+                    # flt.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
+                    # if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
+                    #     flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
+                    # else:
+                    #     flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                    # flt.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
+                    # flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                    # res = flt.run()
+
+                    applyxfm = fsl.preprocess.ApplyXFM()
+                    applyxfm.inputs.in_file = os.path.join(data_dir, subject, 'ADC_reorient.nii.gz')
+                    applyxfm.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                    applyxfm.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
+                    applyxfm.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                    applyxfm.inputs.apply_xfm = True
+                    result = applyxfm.run()
 
                     # apply skull stripping mask
                     am = fsl.maths.ApplyMask()
@@ -290,6 +298,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             if not os.path.exists(os.path.join(output_dir, subject, 'TTP.nii.gz')):
                 if os.path.exists(os.path.join(data_dir, subject, 'TTP.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
+                    print(os.path.join(data_dir, subject, 'TTP.nii.gz'))
                     print('TTP coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
                     reorient.inputs.in_file = os.path.join(data_dir, subject, 'TTP.nii.gz')
@@ -442,6 +451,44 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     mask = nib.load(DWI_b0_mask_path)
                     MTT_norm = zscore_normalize(MTT_final, mask)
                     nib.save(MTT_norm, MTT_path)
+                else:
+                    pass
+            else:
+                pass
+        elif modality == 'GRE':
+            if not os.path.exists(os.path.join(output_dir, subject, 'GRE.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, subject, 'GRE.nii.gz')) and os.path.exists(os.path.join(
+                        output_dir, subject, 'B0_r_transform.mat')):
+                    print('GRE coregistration starts...')
+                    reorient = fsl.utils.Reorient2Std()
+                    reorient.inputs.in_file = os.path.join(data_dir, subject, 'GRE.nii.gz')
+                    reorient.inputs.out_file = os.path.join(temp_dir, 'GRE_reorient.nii.gz')
+                    res = reorient.run()
+
+                    # register with GRE
+                    flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
+                                    searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
+                    flt.inputs.in_file = os.path.join(temp_dir, 'GRE_reorient.nii.gz')
+
+                    flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                    flt.inputs.out_file = os.path.join(temp_dir, 'GRE_r.nii.gz')
+                    flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                    res = flt.run()
+
+                    # apply skull stripping mask
+                    am = fsl.maths.ApplyMask()
+                    am.inputs.in_file = os.path.join(temp_dir, 'GRE_r.nii.gz')
+                    am.inputs.mask_file = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
+                    am.inputs.out_file = os.path.join(output_dir, subject, 'GRE.nii.gz')
+                    res = am.run()
+
+                    # z score normalization
+                    GRE_path = os.path.join(output_dir, subject, 'GRE.nii.gz')
+                    GRE_final = nib.load(GRE_path)
+                    DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
+                    mask = nib.load(DWI_b0_mask_path)
+                    GRE_norm = zscore_normalize(GRE_final, mask)
+                    nib.save(GRE_norm, GRE_path)
                 else:
                     pass
             else:

@@ -79,45 +79,47 @@ generated cmd line:
 
 def dcm_to_nifti(dicom_dir, nifti_dir, split=True, tool_used='dcm2niix'):
     for patient in os.listdir(dicom_dir):
-        path_dicom = os.path.join(dicom_dir, patient)
-        path_nifti = os.path.join(nifti_dir, patient)
-        # make subfolder for each patient
-        if not os.path.exists(path_nifti):
-            os.makedirs(path_nifti)
-        if not split:
-            if tool_used == 'dcm2niix':
-                converter = Dcm2niix()
-                converter.inputs.source_dir = path_dicom
-                converter.inputs.compression = 5
-                converter.inputs.merge_imgs = True
-                converter.inputs.out_filename = '%d'
-                converter.inputs.output_dir = path_nifti
-                converter.run()
-            elif tool_used == 'dcm2nii':
-                converter = Dcm2nii()
-                converter.inputs.source_dir = path_dicom
-                converter.inputs.gzip_output = True
-                converter.inputs.output_dir = path_nifti
-                converter.run()
-            else:
-                raise Warning("tool used does not exist, please enter dcm2nii or dcm2niix")
+        if patient.startswith('47') and patient not in ['289043', '289023', '289029', '289048']:
+            path_dicom = os.path.join(dicom_dir, patient)
+            path_nifti = os.path.join(nifti_dir, patient)
+            if len(os.listdir(path_dicom)) != 0:
+                # make subfolder for each patient
+                if not os.path.exists(path_nifti):
+                    os.makedirs(path_nifti)
+                if not split:
+                    if tool_used == 'dcm2niix':
+                        converter = Dcm2niix()
+                        converter.inputs.source_dir = path_dicom
+                        converter.inputs.compression = 5
+                        converter.inputs.merge_imgs = True
+                        converter.inputs.out_filename = '%d'
+                        converter.inputs.output_dir = path_nifti
+                        converter.run()
+                    elif tool_used == 'dcm2nii':
+                        converter = Dcm2nii()
+                        converter.inputs.source_dir = path_dicom
+                        converter.inputs.gzip_output = True
+                        converter.inputs.output_dir = path_nifti
+                        converter.run()
+                    else:
+                        raise Warning("tool used does not exist, please enter dcm2nii or dcm2niix")
 
-        else:
-            for s in os.listdir(path_dicom):
-                if tool_used == 'dcm2niix':
-                    try:
-                        subprocess.call('/home/harryzhang/toolbox/dcm2niix/console/dcm2niix -m y -5 -f %%d -o %s %s' %
-                                        (path_nifti, path_dicom + '/'+s), shell=True)
-                    except:
-                        pass
-                elif tool_used == 'dcm2nii':
-                    converter = Dcm2nii()
-                    converter.inputs.source_dir = path_dicom + '/' + s
-                    converter.inputs.gzip_output = True
-                    converter.inputs.output_dir = path_nifti
-                    converter.run()
                 else:
-                    raise Warning("tool used does not exist, please enter dcm2nii or dcm2niix")
+                    # for s in os.listdir(path_dicom):
+                    if tool_used == 'dcm2niix':
+                        try:
+                            subprocess.call('/home/jennifer/Git_Repositories/dcm2niix -m y -5 -f %%d -o %s %s' %
+                                            (path_nifti, path_dicom), shell=True)
+                        except:
+                            pass
+                    elif tool_used == 'dcm2nii':
+                        converter = Dcm2nii()
+                        converter.inputs.source_dir = path_dicom + '/' + s
+                        converter.inputs.gzip_output = True
+                        converter.inputs.output_dir = path_nifti
+                        converter.run()
+                    else:
+                        raise Warning("tool used does not exist, please enter dcm2nii or dcm2niix")
 
 
 '''
@@ -148,7 +150,7 @@ def dcm_to_dcm_compress(dicom_dir, dicom_out_dir, level='series', method='dcm2dc
                         subprocess.call('dcmdjpeg -v %s %s' % (dcm_in, dcm_out), shell=True)
         elif level == 'study':
             if method == 'dcm2dcm':
-                subprocess.call("dcm2dcm --jpll %s %s" % (path_dicom, path_out), shell=True)
+                subprocess.call("/home/jennifer/Git_Repositories/dcm4che-5.23.1/bin/dcm2dcm --jpll %s %s" % (path_dicom, path_out), shell=True)
             elif method == 'dcmdjpeg':
                 for s in os.listdir(path_dicom):
                     path_series = os.path.join(path_dicom, s)

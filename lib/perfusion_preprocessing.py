@@ -154,6 +154,8 @@ if __name__ == '__main__':
 
     parallel = False
 
+    print('this works')
+
     def complete_reg_steps(p):
         if not os.path.isdir(os.path.join(output_folder, p)):
             os.makedirs(os.path.join(output_folder, p))
