@@ -8,11 +8,13 @@ from lib.zscore_norm import zscore_normalize
 from nipype.interfaces import fsl
 from nipype.interfaces.ants import N4BiasFieldCorrection
 import subprocess
+import time
 
 
 def preprocess(data_dir, subject, atlas_dir, output_dir):
     with tempfile.TemporaryDirectory() as temp_dir:
         if not os.path.exists(os.path.join(output_dir, subject, 'DWI_b0.nii.gz')):
+            print(temp_dir)
             if os.path.exists(os.path.join(data_dir, subject, 'DWI_b0.nii.gz')):
                 # reorient to MNI standard direction
                 reorient = fsl.utils.Reorient2Std()
@@ -50,12 +52,12 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 flt = fsl.FLIRT(bins=640, cost_func='mutualinfo', interp='spline',
                                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=12)
                 flt.inputs.in_file = os.path.join(temp_dir, 'BET_b0_first_run_n4.nii.gz')
-                flt.inputs.reference = atlas_dir + '/mni152_downsample.nii.gz'
+                flt.inputs.reference = atlas_dir + '/mni152_downsample_t2.nii.gz'
                 flt.inputs.out_file = os.path.join(temp_dir, 'BET_b0_first_run_r.nii.gz')
                 flt.inputs.out_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                 res = flt.run()
                 print('FSL registration...')
-
+                time.sleep(30)
                 # second pass of BET skull stripping
                 btr2 = fsl.BET()
                 btr2.inputs.in_file = os.path.join(temp_dir, 'BET_b0_first_run_r.nii.gz')
@@ -65,6 +67,8 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 btr2.inputs.out_file = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
                 res = btr2.run()
                 print('BET skull stripping...')
+
+                time.sleep(30)
 
                 # copy mask file to output folder
                 shutil.copy2(os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz'),
@@ -229,7 +233,7 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     # res = flt.run()
 
                     applyxfm = fsl.preprocess.ApplyXFM()
-                    applyxfm.inputs.in_file = os.path.join(data_dir, subject, 'ADC_reorient.nii.gz')
+                    applyxfm.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
                     applyxfm.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                     applyxfm.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
                     applyxfm.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
