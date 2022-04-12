@@ -23,21 +23,21 @@ def rapid_map_conversion(input_path):
         pt_path = os.path.join(input_path, pt)
         img = 'DWI.nii.gz'
 
-        img_path = os.path.join(pt_path, img)
-        if os.path.exists(img_path) and pt not in [470020]:
+        # img_path = os.path.join(pt_path, img)
+        # if os.path.exists(img_path) and pt not in [470020]:
 
-            if os.path.exists(os.path.join(pt_path, 'DWI.bval')):
-                f = open(os.path.join(pt_path, 'DWI.bval'), "r")
-                vol_list = f.read().replace("\n", "").split(' ')
-                dwi_img = nib.load(img_path)
-                for vol in range(dwi_img.shape[3]):
-                    nib.save(dwi_img.slicer[:, :, :, vol], os.path.join(pt_path, 'DWI_b%s.nii.gz'%vol_list[vol]))
-            else:
-                print('NO BVALUE FILE MUST CHECK FOR PT %s' % str(pt))
+            # if os.path.exists(os.path.join(pt_path, 'DWI.bval')):
+            #     f = open(os.path.join(pt_path, 'DWI.bval'), "r")
+            #     vol_list = f.read().replace("\n", "").split(' ')
+            #     dwi_img = nib.load(img_path)
+            #     for vol in range(dwi_img.shape[3]):
+            #         nib.save(dwi_img.slicer[:, :, :, vol], os.path.join(pt_path, 'DWI_b%s.nii.gz'%vol_list[vol]))
+            # else:
+            #     print('NO BVALUE FILE MUST CHECK FOR PT %s' % str(pt))
 
         img = 'RAPID_All.nii.gz'
         img_path = os.path.join(pt_path, img)
-        print(pt)
+        # print(pt)
         if os.path.exists(img_path) :
             rapid_img = nib.load(os.path.join(pt_path, img))
 
