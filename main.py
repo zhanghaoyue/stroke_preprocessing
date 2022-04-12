@@ -113,30 +113,30 @@ if __name__ == '__main__':
     #         print(patient)
     ##### combine the fsl
     # if test or check for error cases, don't use parallel
-    # parallel = False
-    # #
-    # def complete_reg_steps(p):
-    #     if p not in ['470068']:
-    #         if not os.path.isdir(os.path.join(output_folder, p)):
-    #             os.makedirs(os.path.join(output_folder, p))
+    parallel = False
     #
-    #         wt.preprocess(nifti_output_dir, p, atlas_folder, output_folder)
-    #
-    #         for mo in modality_list:
-    #             wt.coregister(nifti_output_dir, p, mo, atlas_folder, output_folder)
-    #
-    #
-    # if not parallel:
-    #     for patient in os.listdir(nifti_output_dir):
-    #         if patient in ['random']:#['570251', '470071', '470053', '470056', '470016']:
-    #             pass
-    #         else:
-    #             if not os.path.isdir(os.path.join(output_folder, patient)):
-    #                 os.makedirs(os.path.join(output_folder, patient))
-    #
-    #             wt.preprocess(nifti_output_dir, patient, atlas_folder, output_folder)
-    #
-    #             for m in modality_list:
-    #                 wt.coregister(nifti_output_dir, patient, m, atlas_folder, output_folder)
-    # else:
-    #     results = Parallel(n_jobs=8)(delayed(complete_reg_steps)(i) for i in os.listdir(nifti_output_dir))
+    def complete_reg_steps(p):
+        if p not in ['470068']:
+            if not os.path.isdir(os.path.join(output_folder, p)):
+                os.makedirs(os.path.join(output_folder, p))
+
+            wt.preprocess(nifti_output_dir, p, atlas_folder, output_folder)
+
+            for mo in modality_list:
+                wt.coregister(nifti_output_dir, p, mo, atlas_folder, output_folder)
+
+
+    if not parallel:
+        for patient in os.listdir(nifti_output_dir):
+            if patient in ['random']:#['570251', '470071', '470053', '470056', '470016']:
+                pass
+            else:
+                if not os.path.isdir(os.path.join(output_folder, patient)):
+                    os.makedirs(os.path.join(output_folder, patient))
+
+                wt.preprocess(nifti_output_dir, patient, atlas_folder, output_folder)
+
+                for m in modality_list:
+                    wt.coregister(nifti_output_dir, patient, m, atlas_folder, output_folder)
+    else:
+        results = Parallel(n_jobs=8)(delayed(complete_reg_steps)(i) for i in os.listdir(nifti_output_dir))

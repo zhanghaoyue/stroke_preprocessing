@@ -273,12 +273,12 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'TMAX_reorient.nii.gz')
-                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
-                        flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
-                    else:
+                    if os.path.exists(os.path.join(output_dir, subject, 'DWI_b0.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                    else:
+                        flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     flt.inputs.out_file = os.path.join(temp_dir, 'TMAX_r.nii.gz')
-                    flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                    # flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                     res = flt.run()
 
                     # apply skull stripping mask
@@ -354,12 +354,12 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'CBF_reorient.nii.gz')
-                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
-                        flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
-                    else:
+                    if os.path.exists(os.path.join(output_dir, subject, 'DWI_b0.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                    else:
+                        flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     flt.inputs.out_file = os.path.join(temp_dir, 'CBF_r.nii.gz')
-                    flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                    # flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                     res = flt.run()
 
                     # apply skull stripping mask
@@ -394,12 +394,12 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'CBV_reorient.nii.gz')
-                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
-                        flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
-                    else:
+                    if os.path.exists(os.path.join(output_dir, subject, 'DWI_b0.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                    else:
+                        flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     flt.inputs.out_file = os.path.join(temp_dir, 'CBV_r.nii.gz')
-                    flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                    # flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                     res = flt.run()
 
                     # apply skull stripping mask
@@ -434,12 +434,12 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
                     flt.inputs.in_file = os.path.join(temp_dir, 'MTT_reorient.nii.gz')
-                    if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
-                        flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
-                    else:
+                    if os.path.exists(os.path.join(output_dir, subject, 'DWI_b0.nii.gz')):
                         flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                    else:
+                        flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     flt.inputs.out_file = os.path.join(temp_dir, 'MTT_r.nii.gz')
-                    flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                    # flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                     res = flt.run()
 
                     # apply skull stripping mask
