@@ -1,4 +1,4 @@
-import lib.workflow_traditional as wt
+# import lib.workflow_traditional as wt
 from lib.dicom2nifti import dcm_to_dcm_compress, dcm_to_nifti, study_to_sequence
 import lib.copy_files as copy_files
 import lib.rapid_conversion as rc
