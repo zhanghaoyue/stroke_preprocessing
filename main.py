@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     # paths
     # maps sequence names dictionary
-    ids = pd.read_csv('/home/jennifer/Projects/Stroke/Data/image_dict.csv', header=None)
+    # ids = pd.read_csv('/home/jennifer/Projects/Stroke/Data/image_dict.csv', header=None)
     # original 461 patients, data in series level (each patient folder contains series folder)
     # dicom_split_dir = "/mnt/sharedJH/DataDump_MRN_series"
     # new cases added in this folder, data in study level (each patient folder contains all series)
