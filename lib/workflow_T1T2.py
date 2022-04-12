@@ -11,33 +11,33 @@ import subprocess
 
 def preprocess(data_dir, subject, atlas_dir, output_dir):
     with tempfile.TemporaryDirectory() as temp_dir:
-        if not os.path.exists(os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')):
-            if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')):
+        if not os.path.exists(os.path.join(output_dir, subject, 'ceT1_r.nii.gz')):
+            if os.path.exists(os.path.join(data_dir, 'crossmoda_', subject, '_ceT1.nii.gz')):
                 # reorient to MNI standard direction
                 reorient = fsl.utils.Reorient2Std()
-                reorient.inputs.in_file = os.path.join(data_dir, subject, 'FLAIR.nii.gz')
-                reorient.inputs.out_file = os.path.join(temp_dir, 'FLAIR_reorient.nii.gz')
+                reorient.inputs.in_file = os.path.join(data_dir, 'crossmoda_', subject, '_ceT1.nii.gz')
+                reorient.inputs.out_file = os.path.join(temp_dir, 'ceT1_reorient.nii.gz')
                 reorient.run()
 
                 # robust fov to remove neck and lower head automatically
                 rf = fsl.utils.RobustFOV()
-                rf.inputs.in_file = os.path.join(temp_dir, 'FLAIR_reorient.nii.gz')
-                rf.inputs.out_roi = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
+                rf.inputs.in_file = os.path.join(temp_dir, 'ceT1_reorient.nii.gz')
+                rf.inputs.out_roi = os.path.join(temp_dir, 'ceT1_RF.nii.gz')
                 rf.run()
 
                 # skull stripping first run
                 print('BET pre-stripping...')
                 btr1 = fsl.BET()
-                btr1.inputs.in_file = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
+                btr1.inputs.in_file = os.path.join(temp_dir, 'ceT1_RF.nii.gz')
                 btr1.inputs.robust = True
                 btr1.inputs.frac = 0.2
-                btr1.inputs.out_file = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
+                btr1.inputs.out_file = os.path.join(temp_dir, 'ceT1_RF.nii.gz')
                 btr1.run()
 
                 # N4 bias field correction
                 print('N4 Bias Field Correction running...')
-                input_image = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
-                output_image = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
+                input_image = os.path.join(temp_dir, 'ceT1_RF.nii.gz')
+                output_image = os.path.join(temp_dir, 'ceT1_RF.nii.gz')
                 subprocess.call('N4BiasFieldCorrection --bspline-fitting [ 300 ] -d 3 '
                                 '--input-image %s --convergence [ 50x50x30x20 ] --output %s --shrink-factor 3'
                                 % (input_image, output_image), shell=True)
@@ -46,8 +46,8 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 print('ANTs registration...')
                 reg = Registration()
                 reg.inputs.fixed_image = atlas_dir + '/flair_test.nii.gz'
-                reg.inputs.moving_image = os.path.join(temp_dir, 'FLAIR_RF.nii.gz')
-                reg.inputs.output_transform_prefix = os.path.join(output_dir, subject, 'FLAIR_r_transform.mat')
+                reg.inputs.moving_image = os.path.join(temp_dir, 'ceT1_RF.nii.gz')
+                reg.inputs.output_transform_prefix = os.path.join(output_dir, subject, 'ceT1_r_transform.mat')
                 reg.inputs.winsorize_upper_quantile = 0.995
                 reg.inputs.winsorize_lower_quantile = 0.005
                 reg.inputs.transforms = ['Rigid', 'Affine', 'SyN']
@@ -70,28 +70,28 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                 reg.inputs.shrink_factors = [[8, 4, 2, 1], [8, 4, 2, 1], [8, 4, 2, 1]]
                 reg.inputs.use_estimate_learning_rate_once = [True, True, True]
                 reg.inputs.use_histogram_matching = [True, True, True]  # This is the default
-                reg.inputs.output_warped_image = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
+                reg.inputs.output_warped_image = os.path.join(output_dir, subject, 'ANTS_T1_r.nii.gz')
                 reg.inputs.verbose = True
                 reg.run()
 
                 # second pass of BET skull stripping
                 print('BET skull stripping...')
                 btr2 = fsl.BET()
-                btr2.inputs.in_file = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
+                btr2.inputs.in_file = os.path.join(output_dir, subject, 'ANTS_T1_r.nii.gz')
                 btr2.inputs.robust = True
                 btr2.inputs.frac = 0.1
                 btr2.inputs.mask = True
-                btr2.inputs.out_file = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
+                btr2.inputs.out_file = os.path.join(output_dir, subject, 'ANTS_T1_r.nii.gz')
                 btr2.run()
 
                 # copy mask file to output folder
-                shutil.copy2(os.path.join(output_dir, subject, 'ANTS_FLAIR_r_mask.nii.gz'),
-                             os.path.join(temp_dir, 'ANTS_FLAIR_r_mask.nii.gz'))
+                shutil.copy2(os.path.join(output_dir, subject, 'ANTS_T1_r_mask.nii.gz'),
+                             os.path.join(temp_dir, 'ANTS_T1_r_mask.nii.gz'))
 
                 # z score normalization
-                FLAIR_path = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
+                FLAIR_path = os.path.join(output_dir, subject, 'ANTS_T1_r.nii.gz')
                 FLAIR_final = nib.load(FLAIR_path)
-                FLAIR_mask_path = os.path.join(temp_dir, 'ANTS_FLAIR_r_mask.nii.gz')
+                FLAIR_mask_path = os.path.join(temp_dir, 'ANTS_T1_r_mask.nii.gz')
                 mask = nib.load(FLAIR_mask_path)
                 FLAIR_norm = zscore_normalize(FLAIR_final, mask)
                 nib.save(FLAIR_norm, FLAIR_path)
@@ -108,33 +108,33 @@ def coregister(data_dir, subject, modality, output_dir):
     print(subject)
     with tempfile.TemporaryDirectory() as temp_dir:
         # register with different modality
-        if modality == 'PWI':
-            if not os.path.exists(os.path.join(output_dir, subject, 'ANTS_PWI_r_final.nii.gz')):
-                if os.path.exists(os.path.join(data_dir, subject, 'PWI.nii.gz')) and os.path.exists(os.path.join(
-                        output_dir, subject, 'FLAIR_r_transform.matComposite.h5')):
-                    print('PWI coregistration starts...')
+        if modality == 'T2':
+            if not os.path.exists(os.path.join(output_dir, subject, 'ANTS_T2_r_final.nii.gz')):
+                if os.path.exists(os.path.join(data_dir, 'crossmoda_', subject, '_hrT2.nii.gz')) \
+                        and os.path.exists(os.path.join(output_dir, subject, 'ceT1_r_transform.matComposite.h5')):
+                    print('T2 coregistration starts...')
                     reorient = fsl.utils.Reorient2Std()
-                    reorient.inputs.in_file = os.path.join(data_dir, subject, 'PWI.nii.gz')
-                    reorient.inputs.out_file = os.path.join(temp_dir, 'PWI_reorient.nii.gz')
-                    res = reorient.run()
+                    reorient.inputs.in_file = os.path.join(data_dir, 'crossmoda_', subject, '_hrT2.nii.gz')
+                    reorient.inputs.out_file = os.path.join(temp_dir, 'T2_reorient.nii.gz')
+                    reorient.run()
 
                     # apply registration transformation on PWI
                     at = ApplyTransforms()
                     at.inputs.dimension = 3
                     at.inputs.input_image_type = 3
-                    at.inputs.input_image = os.path.join(data_dir, subject, 'PWI.nii.gz')
-                    at.inputs.reference_image = os.path.join(output_dir, subject, 'ANTS_FLAIR_r.nii.gz')
-                    at.inputs.output_image = os.path.join(output_dir, subject, 'ANTS_PWI_r.nii.gz')
+                    at.inputs.input_image = os.path.join(temp_dir, 'T2_reorient.nii.gz')
+                    at.inputs.reference_image = os.path.join(output_dir, subject, 'ANTS_T1_r.nii.gz')
+                    at.inputs.output_image = os.path.join(output_dir, subject, 'ANTS_T2_r.nii.gz')
                     at.inputs.interpolation = 'Linear'
                     at.inputs.default_value = 0
-                    at.inputs.transforms = os.path.join(output_dir, subject, 'FLAIR_r_transform.matComposite.h5')
+                    at.inputs.transforms = os.path.join(output_dir, subject, 'ceT1_r_transform.matComposite.h5')
                     at.run()
 
                     # apply skull stripping mask
                     am = fsl.maths.ApplyMask()
-                    am.inputs.in_file = os.path.join(output_dir, subject, 'ANTS_PWI_r.nii.gz')
-                    am.inputs.mask_file = os.path.join(output_dir, subject, 'ANTS_FLAIR_r_mask.nii.gz')
-                    am.inputs.out_file = os.path.join(output_dir, subject, 'ANTS_PWI_r_final.nii.gz')
+                    am.inputs.in_file = os.path.join(output_dir, subject, 'ANTS_T2_r.nii.gz')
+                    am.inputs.mask_file = os.path.join(output_dir, subject, 'ANTS_T2_r_mask.nii.gz')
+                    am.inputs.out_file = os.path.join(output_dir, subject, 'ANTS_T2_r_final.nii.gz')
                     am.run()
                 else:
                     pass
@@ -150,12 +150,10 @@ if __name__ == '__main__':
     in_histmatch_folder = '/data/haoyuezhang/data/stroke_MRI/stroke_MRI/Registered_output'
     out_histmatch_folder = '/data/haoyuezhang/data/stroke_MRI/stroke_MRI/Registered_output_histmatch'
 
-    modality_list = ['PWI']
-    modality_list_histmatch = ['FLAIR', 'PWI']
+    modality_list = ['T2']
+    modality_list_histmatch = ['T2']
 
     parallel = False
-
-    print('this works')
 
     def complete_reg_steps(p):
         if not os.path.isdir(os.path.join(output_folder, p)):
