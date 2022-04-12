@@ -36,9 +36,9 @@ if __name__ == '__main__':
     # if decompress first, use this dicom folder
     # dicom_new_dir = "/home/jennifer/Projects/Stroke/Data/Query_Process_112021/MR"
     transcode_dicom_dir = '/home/jennifer/Projects/Stroke/Data/Query_Process_112021/MR'
-    nifti_input_dir = "/home/jennifer/Projects/Stroke/Data/Query_Process_112021/MR_Nifti"
-    nifti_output_dir = '/home/jennifer/Projects/Stroke/Data/Query_Process_112021/MR_Nifti_Renamed'
-    output_folder = '/home/jennifer/Projects/Stroke/Data/Query_Process_112021/MR_Nifti_Final'
+    nifti_input_dir = "/media/ericyang/data1/Stroke_Images/Nifti_Series"
+    nifti_output_dir = '/media/ericyang/data1/Stroke_Images/UCLA_MR_nifti_renamed'
+    output_folder = '/media/ericyang/data1/stroke_multicenter'
     # nifti_output_dir = '/data/haoyuezhang/Original_nifti'
     atlas_folder = "/home/jennifer/Projects/Stroke/Data/Atlases/vascular_territory_template"
     # output_folder = '/home/jennifer/Projects/Stroke/Data/test_directory/IR_CT/Register_final'
@@ -75,9 +75,10 @@ if __name__ == '__main__':
     # #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
     # #     wr.writerow(unique_cases)
     #
-    # rc.rapid_map_conversion(nifti_output_dir)
+    rc.rapid_map_conversion(nifti_output_dir)
 
-    modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
+    # modality_list = ['DWI_b1000', 'FLAIR', 'ADC', 'TMAX', 'TTP', 'CBF', 'CBV', 'MTT']
+    modality_list = ['TMAX', 'CBF', 'CBV', 'MTT']
 
     # modality_list = ['GRE']
     ##### DWI_500 post-hoc processing
@@ -89,27 +90,27 @@ if __name__ == '__main__':
     #             wt.coregister(nifti_output_dir, patient, mo, atlas_folder, output_folder)
 
     ##### ADC generation - merging
-    dwi_list = ['DWI_b0.nii.gz','DWI_b500.nii.gz','DWI_b1000.nii.gz']
-
-    for patient in os.listdir(output_folder):
-        if os.path.exists(os.path.join(output_folder, patient, 'DWI_b500.nii.gz')):
-            if len(os.listdir(os.path.join(output_folder, patient))) != 0:
-                da.merge_files(output_folder, patient, dwi_list)
-        else:
-            print(patient)
+    # dwi_list = ['DWI_b0.nii.gz','DWI_b500.nii.gz','DWI_b1000.nii.gz']
+    #
+    # for patient in os.listdir(output_folder):
+    #     if os.path.exists(os.path.join(output_folder, patient, 'DWI_b500.nii.gz')):
+    #         if len(os.listdir(os.path.join(output_folder, patient))) != 0:
+    #             da.merge_files(output_folder, patient, dwi_list)
+    #     else:
+    #         print(patient)
     #generation
-    for patient in os.listdir(output_folder):
-        print(patient)
-        if os.path.exists(os.path.join(output_folder, patient, 'DWI_b500.nii.gz')):
-            #TODO: move these (put in another part of the code) this was done incorrectly in copy_files.py
-            if len(os.listdir(os.path.join(output_folder, patient))) != 0:
-                shutil.copy2(os.path.join(nifti_output_dir, patient, 'DWI.bval'),
-                             os.path.join(output_folder, patient, 'DWI.bval'))
-                shutil.copy2(os.path.join(nifti_output_dir, patient, 'DWI.bvec'),
-                             os.path.join(output_folder, patient, 'DWI.bvec'))
-                da.generate_adc(output_folder, patient)
-        else:
-            print(patient)
+    # for patient in os.listdir(output_folder):
+    #     print(patient)
+    #     if os.path.exists(os.path.join(output_folder, patient, 'DWI_b500.nii.gz')):
+    #         #TODO: move these (put in another part of the code) this was done incorrectly in copy_files.py
+    #         if len(os.listdir(os.path.join(output_folder, patient))) != 0:
+    #             shutil.copy2(os.path.join(nifti_output_dir, patient, 'DWI.bval'),
+    #                          os.path.join(output_folder, patient, 'DWI.bval'))
+    #             shutil.copy2(os.path.join(nifti_output_dir, patient, 'DWI.bvec'),
+    #                          os.path.join(output_folder, patient, 'DWI.bvec'))
+    #             da.generate_adc(output_folder, patient)
+    #     else:
+    #         print(patient)
     ##### combine the fsl
     # if test or check for error cases, don't use parallel
     parallel = False

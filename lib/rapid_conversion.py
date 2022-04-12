@@ -50,6 +50,7 @@ def rapid_map_conversion(input_path):
                     # nib.save(rapid_img.slicer[:, :, :, 3], os.path.join(pt_path, 'RAPID_TMAX.nii.gz'))
 
                 elif rapid_img.get_data().shape[3] == 8:
+                    print('converting %s' %(str(pt)))
                     nib.save(rapid_img.slicer[:, :, :, 1], os.path.join(pt_path, 'RAPID_CBV.nii.gz'))
                     nib.save(rapid_img.slicer[:, :, :, 3], os.path.join(pt_path, 'RAPID_CBF.nii.gz'))
                     nib.save(rapid_img.slicer[:, :, :, 5], os.path.join(pt_path, 'RAPID_MTT.nii.gz'))
