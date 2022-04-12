@@ -173,7 +173,8 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             else:
                 pass
         elif modality == 'FLAIR':
-            if not os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
+            # if not os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
+            if True:
                 if os.path.exists(os.path.join(data_dir, subject, 'FLAIR.nii.gz')) and os.path.exists(os.path.join(
                         output_dir, subject, 'B0_r_transform.mat')):
                     print('FLAIR coregistration starts...')
@@ -183,17 +184,18 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
                     res = reorient.run()
 
                     # register with FLAIR
-                    flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline',
+                    flt = fsl.FLIRT(cost_func='corratio', interp='spline',
                                     searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180])
                     flt.inputs.in_file = os.path.join(temp_dir, 'FLAIR_reorient.nii.gz')
-                    flt.inputs.reference = atlas_dir + '/mni152_downsample.nii.gz'
-                    flt.inputs.out_file = os.path.join(temp_dir, 'FLAIR_r.nii.gz')
+                    # flt.inputs.reference = atlas_dir + '/mni152_downsample.nii.gz'
+                    flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                    flt.inputs.out_file = os.path.join(output_dir, subject,  'FLAIR_r.nii.gz')
                     flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
                     res = flt.run()
 
                     # apply skull stripping mask
                     am = fsl.maths.ApplyMask()
-                    am.inputs.in_file = os.path.join(temp_dir, 'FLAIR_r.nii.gz')
+                    am.inputs.in_file = os.path.join(output_dir, subject,  'FLAIR_r.nii.gz')
                     am.inputs.mask_file = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
                     am.inputs.out_file = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
                     res = am.run()
@@ -211,51 +213,50 @@ def coregister(data_dir, subject, modality, atlas_dir, output_dir):
             else:
                 pass
         elif modality == 'ADC':
-            if not os.path.exists(os.path.join(output_dir, subject, 'ADC.nii.gz')):
-                if os.path.exists(os.path.join(data_dir, subject, 'ADC.nii.gz')) and os.path.exists(os.path.join(
-                        output_dir, subject, 'B0_r_transform.mat')):
-                    print('ADC coregistration starts...')
-                    reorient = fsl.utils.Reorient2Std()
-                    reorient.inputs.in_file = os.path.join(data_dir, subject, 'ADC.nii.gz')
-                    reorient.inputs.out_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
-                    res = reorient.run()
+            # if not os.path.exists(os.path.join(output_dir, subject, 'ADC.nii.gz')):
+            if os.path.exists(os.path.join(data_dir, subject, 'ADC.nii.gz')) and os.path.exists(os.path.join(
+                    output_dir, subject, 'B0_r_transform.mat')):
+                print('ADC coregistration starts...')
+                reorient = fsl.utils.Reorient2Std()
+                reorient.inputs.in_file = os.path.join(data_dir, subject, 'ADC.nii.gz')
+                reorient.inputs.out_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
+                res = reorient.run()
 
-                    # # register with ADC
-                    # flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
-                    #                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
-                    # flt.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
-                    # if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
-                    #     flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
-                    # else:
-                    #     flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
-                    # flt.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
-                    # flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
-                    # res = flt.run()
+                # # register with ADC
+                # flt = fsl.FLIRT(cost_func='mutualinfo', interp='spline', bins=640,
+                #                 searchr_x=[-180, 180], searchr_y=[-180, 180], searchr_z=[-180, 180], dof=6)
+                # flt.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
+                # if os.path.exists(os.path.join(output_dir, subject, 'FLAIR.nii.gz')):
+                #     flt.inputs.reference = os.path.join(output_dir, subject, 'FLAIR.nii.gz')
+                # else:
+                #     flt.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                # flt.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
+                # flt.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                # res = flt.run()
 
-                    applyxfm = fsl.preprocess.ApplyXFM()
-                    applyxfm.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
-                    applyxfm.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
-                    applyxfm.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
-                    applyxfm.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
-                    applyxfm.inputs.apply_xfm = True
-                    result = applyxfm.run()
+                applyxfm = fsl.preprocess.ApplyXFM()
+                applyxfm.inputs.in_file = os.path.join(temp_dir, 'ADC_reorient.nii.gz')
+                applyxfm.inputs.in_matrix_file = os.path.join(output_dir, subject, 'B0_r_transform.mat')
+                applyxfm.inputs.out_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
+                applyxfm.inputs.reference = os.path.join(output_dir, subject, 'DWI_b0.nii.gz')
+                applyxfm.inputs.apply_xfm = True
+                result = applyxfm.run()
 
-                    # apply skull stripping mask
-                    am = fsl.maths.ApplyMask()
-                    am.inputs.in_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
-                    am.inputs.mask_file = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
-                    am.inputs.out_file = os.path.join(output_dir, subject, 'ADC.nii.gz')
-                    res = am.run()
+                # apply skull stripping mask
+                am = fsl.maths.ApplyMask()
+                am.inputs.in_file = os.path.join(temp_dir, 'ADC_r.nii.gz')
+                am.inputs.mask_file = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
+                am.inputs.out_file = os.path.join(output_dir, subject, 'ADC.nii.gz')
+                res = am.run()
 
-                    # z score normalization
-                    ADC_path = os.path.join(output_dir, subject, 'ADC.nii.gz')
-                    ADC_final = nib.load(ADC_path)
-                    DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
-                    mask = nib.load(DWI_b0_mask_path)
-                    ADC_norm = zscore_normalize(ADC_final, mask)
-                    nib.save(ADC_norm, ADC_path)
-                else:
-                    pass
+                # z score normalization
+                ADC_path = os.path.join(output_dir, subject, 'ADC.nii.gz')
+                ADC_final = nib.load(ADC_path)
+                DWI_b0_mask_path = os.path.join(output_dir, subject, 'DWI_b0_mask.nii.gz')
+                mask = nib.load(DWI_b0_mask_path)
+                ADC_norm = zscore_normalize(ADC_final, mask)
+                nib.save(ADC_norm, ADC_path)
+
             else:
                 pass
         elif modality == 'TMAX':
