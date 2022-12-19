@@ -1,9 +1,10 @@
 # stroke_preprocessing
-MRI Brain preprocessing for stroke
+MRI/CT imaging preprocessing pipeline
 
-MRI, CT
-DWI
-Perfusion
+Built initially for our work:\
+Intra-domain task-adaptive transfer learning to determine acute ischemic stroke onset time\
+https://pubmed.ncbi.nlm.nih.gov/33934065/ 
 
-#TODO 
-ADD T1 registration experiments
+Please cite if you find it useful
+
+
