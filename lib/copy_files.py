@@ -38,18 +38,18 @@ def rename_and_copy(new_ids, input_dir, output_dir):
                     patient_row.iloc[0, patient_row.columns.get_loc(new_dict[nifti_name])] = 1
                     shutil.copy(os.path.join(pt_dir, nifti_file), os.path.join(nii_output,
                                                                                new_dict[nifti_name]+'.nii.gz'))
-            # elif nifti_file.endswith('.nii.gz'):
-            #     nifti_name = nifti_file[:-7]
-            #     if nifti_name in new_dict.keys():
-            #         patient_row.iloc[0, patient_row.columns.get_loc(new_dict[nifti_name])] = 1
-            #         shutil.copy(os.path.join(pt_dir, nifti_file), os.path.join(nii_output,
-            #                                                                    new_dict[nifti_name]+'.nii.gz'))
-            # elif nifti_file.endswith('.bval'):
-            #     nifti_name = nifti_file[:-5]
-            #     if nifti_name in new_dict.keys():
-            #         patient_row.iloc[0, patient_row.columns.get_loc(new_dict[nifti_name])] = 1
-            #         shutil.copy(os.path.join(pt_dir, nifti_file), os.path.join(nii_output,
-            #                                                                    new_dict[nifti_name]+'.bval'))
+            elif nifti_file.endswith('.nii.gz'):
+                nifti_name = nifti_file[:-7]
+                if nifti_name in new_dict.keys():
+                    patient_row.iloc[0, patient_row.columns.get_loc(new_dict[nifti_name])] = 1
+                    shutil.copy(os.path.join(pt_dir, nifti_file), os.path.join(nii_output,
+                                                                               new_dict[nifti_name]+'.nii.gz'))
+            elif nifti_file.endswith('.bval'):
+                nifti_name = nifti_file[:-5]
+                if nifti_name in new_dict.keys():
+                    patient_row.iloc[0, patient_row.columns.get_loc(new_dict[nifti_name])] = 1
+                    shutil.copy(os.path.join(pt_dir, nifti_file), os.path.join(nii_output,
+                                                                               new_dict[nifti_name]+'.bval'))
             elif nifti_file.endswith('.bvec'):
                 nifti_name = nifti_file[:-5]
                 if nifti_name in new_dict.keys():

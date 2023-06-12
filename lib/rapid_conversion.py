@@ -23,37 +23,47 @@ def rapid_map_conversion(input_path):
         pt_path = os.path.join(input_path, pt)
         img = 'DWI.nii.gz'
 
-        img_path = os.path.join(pt_path, img)
-        if os.path.exists(img_path):
+        # img_path = os.path.join(pt_path, img)
+        # if os.path.exists(img_path) and pt not in [470020]:
 
-            if os.path.exists(os.path.join(pt_path, 'DWI.bval')):
-                f = open(os.path.join(pt_path, 'DWI.bval'), "r")
-                vol_list = f.read().replace("\n", "").split(' ')
-                dwi_img = nib.load(img_path)
-                for vol in range(dwi_img.shape[3]):
-                    nib.save(dwi_img.slicer[:, :, :, vol], os.path.join(pt_path, 'DWI_b%s.nii.gz'%vol_list[vol]))
-            else:
-                print('NO BVALUE FILE MUST CHECK FOR PT %s' % str(pt))
+            # if os.path.exists(os.path.join(pt_path, 'DWI.bval')):
+            #     f = open(os.path.join(pt_path, 'DWI.bval'), "r")
+            #     vol_list = f.read().replace("\n", "").split(' ')
+            #     dwi_img = nib.load(img_path)
+            #     for vol in range(dwi_img.shape[3]):
+            #         nib.save(dwi_img.slicer[:, :, :, vol], os.path.join(pt_path, 'DWI_b%s.nii.gz'%vol_list[vol]))
+            # else:
+            #     print('NO BVALUE FILE MUST CHECK FOR PT %s' % str(pt))
 
         img = 'RAPID_All.nii.gz'
         img_path = os.path.join(pt_path, img)
-        print(pt)
-        if os.path.exists(img_path):
+        # print(pt)
+        if os.path.exists(img_path) :
             rapid_img = nib.load(os.path.join(pt_path, img))
 
             if len(rapid_img.get_data().shape) == 4:
-                nib.save(rapid_img.slicer[:, :, :, 0], os.path.join(pt_path, 'RAPID_CBV.nii.gz'))
-                nib.save(rapid_img.slicer[:, :, :, 1], os.path.join(pt_path, 'RAPID_CBF.nii.gz'))
-                nib.save(rapid_img.slicer[:, :, :, 2], os.path.join(pt_path, 'RAPID_MTT.nii.gz'))
-                nib.save(rapid_img.slicer[:, :, :, 3], os.path.join(pt_path, 'RAPID_TMAX.nii.gz'))
+                if rapid_img.get_data().shape[3] == 4:
+                    pass
+                    # nib.save(rapid_img.slicer[:, :, :, 0], os.path.join(pt_path, 'RAPID_CBV.nii.gz'))
+                    # nib.save(rapid_img.slicer[:, :, :, 1], os.path.join(pt_path, 'RAPID_CBF.nii.gz'))
+                    # nib.save(rapid_img.slicer[:, :, :, 2], os.path.join(pt_path, 'RAPID_MTT.nii.gz'))
+                    # nib.save(rapid_img.slicer[:, :, :, 3], os.path.join(pt_path, 'RAPID_TMAX.nii.gz'))
+
+                elif rapid_img.get_data().shape[3] == 8:
+                    print('converting %s' %(str(pt)))
+                    nib.save(rapid_img.slicer[:, :, :, 1], os.path.join(pt_path, 'RAPID_CBV.nii.gz'))
+                    nib.save(rapid_img.slicer[:, :, :, 3], os.path.join(pt_path, 'RAPID_CBF.nii.gz'))
+                    nib.save(rapid_img.slicer[:, :, :, 5], os.path.join(pt_path, 'RAPID_MTT.nii.gz'))
+                    nib.save(rapid_img.slicer[:, :, :, 7], os.path.join(pt_path, 'RAPID_TMAX.nii.gz'))
             elif len(rapid_img.get_data().shape) == 3:
-                num_slice = int(rapid_img.get_data().shape[2] / 4)
-                nib.save(rapid_img.slicer[:, :, 0:num_slice], os.path.join(pt_path, 'RAPID_CBV.nii.gz'))
-                nib.save(rapid_img.slicer[:, :, num_slice:(2 * num_slice)], os.path.join(pt_path, 'RAPID_CBF.nii.gz'))
-                nib.save(rapid_img.slicer[:, :, num_slice * 2:(3 * num_slice)],
-                         os.path.join(pt_path, 'RAPID_MTT.nii.gz'))
-                nib.save(rapid_img.slicer[:, :, num_slice * 3:(4 * num_slice)],
-                         os.path.join(pt_path, 'RAPID_TMAX.nii.gz'))
+                pass
+                # num_slice = int(rapid_img.get_data().shape[2] / 4)
+                # nib.save(rapid_img.slicer[:, :, 0:num_slice], os.path.join(pt_path, 'RAPID_CBV.nii.gz'))
+                # nib.save(rapid_img.slicer[:, :, num_slice:(2 * num_slice)], os.path.join(pt_path, 'RAPID_CBF.nii.gz'))
+                # nib.save(rapid_img.slicer[:, :, num_slice * 2:(3 * num_slice)],
+                #          os.path.join(pt_path, 'RAPID_MTT.nii.gz'))
+                # nib.save(rapid_img.slicer[:, :, num_slice * 3:(4 * num_slice)],
+                #          os.path.join(pt_path, 'RAPID_TMAX.nii.gz'))
 
         if 'RAPID_TMAX_C.nii.gz' in os.listdir(pt_path):
             os.rename(os.path.join(pt_path, 'RAPID_TMAX.nii.gz'), os.path.join(pt_path, 'RAPID_TMAX_raw.nii.gz'))
@@ -68,7 +78,7 @@ def rapid_map_conversion(input_path):
             os.rename(os.path.join(pt_path, 'RAPID_MTT.nii.gz'), os.path.join(pt_path, 'RAPID_MTT_raw.nii.gz'))
             os.rename(os.path.join(pt_path, 'RAPID_MTT_C.nii.gz'), os.path.join(pt_path, 'RAPID_MTT.nii.gz'))
 
-        if not all(x in os.listdir(pt_path) for x in ['TMAX.nii.gz', 'CBF.nii.gz', 'MTT.nii.gz', 'CBV.nii.gz']):
+        if not all(x in os.listdir(pt_path) for x in ['TMAX.nii.gz', 'CBF.nii.gz', 'MTT.nii.gz', 'CBV.nii.gz']) and pt not in ['470020']:
             for file in os.listdir(pt_path):
 
                 if file in rap_ims.keys():

@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="jennifer@10.9.97.12:22 password">
+  <component name="PublishConfigData" autoUpload="Always" serverName="jennifer@10.9.94.27:22">
     <serverData>
-      <paths name="jennifer@10.9.97.12:22">
+      <paths name="jennifer@10.9.94.27:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/jennifer/PycharmProjects/stroke_preprocessing" local="$PROJECT_DIR$" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="jennifer@10.9.97.12:22 password">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/jennifer/PycharmProjects/stroke_preprocessing" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/jennifer/Git_Repositories/stroke_preprocessing" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
