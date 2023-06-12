@@ -42,7 +42,7 @@ def preprocess(data_dir, subject, atlas_dir, output_dir):
                                 '--input-image %s --convergence [ 50x50x30x20 ] --output %s --shrink-factor 3'
                                 % (input_image, output_image), shell=True)
 
-                # registration of FLAIR to MNI152 FLAIR template
+                # registration of  to MNI152 FLAIR template
                 print('ANTs registration...')
                 reg = Registration()
                 reg.inputs.fixed_image = atlas_dir + '/flair_test.nii.gz'
