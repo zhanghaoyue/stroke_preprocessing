@@ -21,7 +21,7 @@ class DicomRetrieval:
 
     def listening(self, patient, series, f):
         self.patient_outdir = os.path.join(self.out_base_dir, patient+'/'+series)
-        self.ls = subprocess.Popen('storescp --accept-unknown -b bofa-420-aberle@10.9.94.219:12112 \
+        self.ls = subprocess.Popen('storescp --accept-unknown -b username@IP_address:port \
          --directory %s' % self.patient_outdir, shell=True, stdout=f, stderr=f, preexec_fn=os.setsid)
 
     def query(self, flag, patient, accession, f):
@@ -34,7 +34,7 @@ class DicomRetrieval:
                     raise
 
             if not os.listdir(patient_uid_dir):
-                subprocess.call('findscu -b bofa-420-aberle@10.9.94.219:12112 --big-endian\
+                subprocess.call('findscu -b username@IP_address:port --big-endian\
                         -c WWPACSQR@10.7.1.64:4100 -m AccessionNumber=%s Modality=MR -L SERIES -r SeriesInstanceUID \
                          NumberOfStudyRelatedInstances NumberOfSeriesRelatedInstances --out-file series.dcm \
                          --out-dir %s' % (accession, patient_uid_dir), stdout=f, stderr=f, shell=True)
@@ -44,8 +44,8 @@ class DicomRetrieval:
 
     def retrieve(self, patient, accession, s, f):
         patient_uid_dir = os.path.join(self.out_query_dir, patient, 'AccessionNumber-' + accession + '/*')
-        self.rv = subprocess.call('movescu -b bofa-420-aberle@10.9.94.219:12112 \
-        -c WWPACSQR@10.7.1.64:4100 -L SERIES -m SeriesInstanceUID=%s Modality=MR\
+        self.rv = subprocess.call('movescu -b username@IP_address:port \
+        -c PACS_username@PACS_IP_address:port -L SERIES -m SeriesInstanceUID=%s Modality=MR\
         --idle-timeout 10000 --retrieve-timeout-total 600000 --dest bofa-420-aberle\
         -- %s' % (s.SeriesInstanceUID, patient_uid_dir), stdout=f, stderr=f, shell=True)
 
@@ -58,14 +58,14 @@ class DicomRetrieval:
 
 
 if __name__ == '__main__':
-    out_base_dir = '/media/harryzhang/VolumeWD/DataDump_MRN_series_v5'
-    out_query_dir = '/media/harryzhang/VolumeWD/QueryUID'
+    out_base_dir = '/media/DataDump_MRN_series_v5'
+    out_query_dir = '/media/QueryUID'
     logging.getLogger().setLevel(logging.INFO)
-    log_outdir = os.path.join('/media/harryzhang/VolumeWD/', 'logs')
+    log_outdir = os.path.join('/media/', 'logs')
     if not os.path.isdir(log_outdir):
         os.makedirs(log_outdir)
 
-    dcm_file = pd.read_csv('/home/harryzhang/PACS_QUERY/DICOM_Query_0806.csv', dtype=str)
+    dcm_file = pd.read_csv('/home/PACS_QUERY/DICOM_Query_0806.csv', dtype=str)
     dcm_array = np.array(dcm_file)
     num_iterations = 10
     retrieve_only = True
