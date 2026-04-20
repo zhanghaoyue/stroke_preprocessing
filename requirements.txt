@@ -2,4 +2,4 @@ joblib==1.2.0
 nibabel==2.5.1
 nipype==1.4.2
 numpy==1.22.0
-pydicom==1.4.2
+pydicom==2.4.5
